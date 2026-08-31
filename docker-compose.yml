@@ -1,0 +1,23 @@
+# Banco de desenvolvimento. Produção usa a mesma versão maior.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: impakto-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: impakto
+      POSTGRES_PASSWORD: impakto
+      POSTGRES_DB: impakto
+      TZ: America/Sao_Paulo
+    ports:
+      - '5432:5432'
+    volumes:
+      - impakto-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U impakto -d impakto']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  impakto-db:

@@ -1,0 +1,33 @@
+{
+  "name": "impakto-portaria",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema web da Impakto, modular por setor. Fase 1: Portaria.",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @impakto/api & npm run dev --workspace @impakto/web",
+    "dev:api": "npm run dev --workspace @impakto/api",
+    "dev:web": "npm run dev --workspace @impakto/web",
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "db:up": "docker compose up -d db",
+    "db:migrate": "npm run db:migrate --workspace @impakto/api",
+    "db:seed": "npm run db:seed --workspace @impakto/api",
+    "db:studio": "npm run db:studio --workspace @impakto/api"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "vite": "^6.0.0"
+  }
+}
