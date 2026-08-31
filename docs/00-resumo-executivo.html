@@ -1,0 +1,410 @@
+<title>Portaria Web — Levantamento e Migração</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f2f3f6;
+  --surface:#ffffff;
+  --surface-2:#e9ebf1;
+  --ink:#151824;
+  --ink-2:#4b5163;
+  --ink-3:#767d92;
+  --line:#d7dae4;
+  --line-soft:#e6e8ef;
+  --blue:#001b5c;
+  --blue-ink:#001b5c;
+  --yellow:#ecd31b;
+  --amber-bg:#fff2cc;
+  --amber-ink:#7c5e00;
+  --green-bg:#c6efce;
+  --green-ink:#006100;
+  --red-bg:#ffcdcd;
+  --red-ink:#9b1c1c;
+  --shadow:0 1px 2px rgba(0,27,92,.06),0 8px 24px -16px rgba(0,27,92,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0c0f19;
+    --surface:#141826;
+    --surface-2:#1c2133;
+    --ink:#e8eaf2;
+    --ink-2:#a6adc2;
+    --ink-3:#7a8299;
+    --line:#2a3145;
+    --line-soft:#212637;
+    --blue:#7d9be8;
+    --blue-ink:#a8bdf0;
+    --yellow:#ecd31b;
+    --amber-bg:#3a2f08;
+    --amber-ink:#f0d68a;
+    --green-bg:#0f3418;
+    --green-ink:#8fd8a3;
+    --red-bg:#3d1414;
+    --red-ink:#f0a3a3;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0c0f19;
+  --surface:#141826;
+  --surface-2:#1c2133;
+  --ink:#e8eaf2;
+  --ink-2:#a6adc2;
+  --ink-3:#7a8299;
+  --line:#2a3145;
+  --line-soft:#212637;
+  --blue:#7d9be8;
+  --blue-ink:#a8bdf0;
+  --yellow:#ecd31b;
+  --amber-bg:#3a2f08;
+  --amber-ink:#f0d68a;
+  --green-bg:#0f3418;
+  --green-ink:#8fd8a3;
+  --red-bg:#3d1414;
+  --red-ink:#f0a3a3;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:Inter,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.disp{font-family:Archivo,Inter,"Segoe UI",sans-serif;text-wrap:balance}
+code,.mono,td.num{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);gap:0;max-width:1240px;margin:0 auto;min-height:100vh}
+.rail{
+  border-right:1px solid var(--line);
+  padding:32px 20px 48px;
+  position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+}
+.rail .mark{display:flex;align-items:center;gap:9px;margin-bottom:26px}
+.rail .chip{width:26px;height:26px;border-radius:7px;background:var(--yellow);display:grid;place-items:center;flex:none}
+.rail .chip svg{width:15px;height:15px}
+.rail .mark b{font-family:Archivo;font-size:13px;letter-spacing:.10em;text-transform:uppercase;color:var(--ink)}
+.rail nav{display:flex;flex-direction:column;gap:1px}
+.rail a{
+  display:flex;gap:10px;align-items:baseline;
+  padding:6px 9px;border-radius:7px;text-decoration:none;color:var(--ink-2);
+  font-size:13.5px;line-height:1.35;transition:background .14s,color .14s;
+}
+.rail a:hover,.rail a:focus-visible{background:var(--surface-2);color:var(--ink)}
+.rail a .n{font-family:"JetBrains Mono";font-size:11px;color:var(--ink-3);flex:none;width:14px}
+.rail .grp{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin:20px 0 7px 9px;font-weight:600}
+main{padding:40px 40px 96px;max-width:900px}
+
+/* ---------- masthead ---------- */
+.eyebrow{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+h1{font-size:clamp(30px,4.4vw,44px);line-height:1.06;font-weight:700;letter-spacing:-.022em;margin:10px 0 0}
+h1 em{font-style:normal;color:var(--blue-ink)}
+.lede{font-size:17px;color:var(--ink-2);max-width:62ch;margin:16px 0 0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.tag{font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);background:var(--surface)}
+.tag.hot{background:var(--yellow);border-color:transparent;color:#151824;font-weight:600}
+
+h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin:0 0 14px;
+   padding-bottom:9px;border-bottom:1px solid var(--line)}
+section{margin-top:52px;scroll-margin-top:24px}
+h3{font-size:19px;font-weight:600;letter-spacing:-.012em;margin:30px 0 8px}
+p{margin:0 0 12px;max-width:66ch}
+a.inline{color:var(--blue-ink);text-decoration-color:color-mix(in srgb,var(--blue-ink) 40%,transparent);text-underline-offset:2px}
+strong{font-weight:600}
+
+/* ---------- metric tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:1px;background:var(--line-soft);
+       border:1px solid var(--line-soft);border-radius:12px;overflow:hidden}
+.tile{background:var(--surface);padding:15px 16px 14px}
+.tile .v{font-family:Archivo;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .k{font-size:11.5px;color:var(--ink-3);margin-top:3px;line-height:1.35}
+.tile.zero .v{color:var(--ink-3)}
+.tile.flag .v{color:var(--amber-ink)}
+
+/* ---------- tables ---------- */
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+th{text-align:left;font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);font-weight:600;
+   padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+td{padding:11px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-2)}
+tr:last-child td{border-bottom:0}
+td:first-child{color:var(--ink);font-weight:500}
+td.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-size:13px}
+code{font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:4px;color:var(--ink)}
+
+/* ---------- status pills ---------- */
+.pill{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+      padding:2px 7px;border-radius:5px;white-space:nowrap}
+.pill.med{background:var(--green-bg);color:var(--green-ink)}
+.pill.div{background:var(--amber-bg);color:var(--amber-ink)}
+.pill.crit{background:var(--red-bg);color:var(--red-ink)}
+
+/* ---------- callout ---------- */
+.note{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--yellow);
+      border-radius:0 10px 10px 0;padding:14px 18px;margin:18px 0}
+.note p:last-child{margin-bottom:0}
+.note .h{font-family:Archivo;font-size:12.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin-bottom:5px}
+
+/* ---------- phases ---------- */
+.phases{display:flex;flex-direction:column;gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);border-radius:12px;overflow:hidden}
+.ph{background:var(--surface);display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:14px;align-items:baseline;padding:13px 16px}
+.ph .n{font-family:Archivo;font-size:12px;font-weight:700;color:var(--blue-ink);letter-spacing:.06em}
+.ph .t{font-size:14px}
+.ph .t b{font-weight:600;color:var(--ink)}
+.ph .t span{color:var(--ink-2);display:block;font-size:12.5px;margin-top:1px}
+.ph .d{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ph.core{background:var(--surface-2)}
+
+/* ---------- decisions ---------- */
+.dvs{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:12px}
+.dv{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:14px 16px;box-shadow:var(--shadow)}
+.dv .id{font-family:"JetBrains Mono";font-size:11px;font-weight:500;color:var(--blue-ink);letter-spacing:.04em}
+.dv .q{font-family:Archivo;font-size:14.5px;font-weight:600;margin:3px 0 6px;line-height:1.3}
+.dv p{font-size:13px;color:var(--ink-2);margin:0;max-width:none}
+.dv .prop{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--ink-2)}
+.dv .prop b{color:var(--ink);font-weight:600}
+.dv.now{border-color:color-mix(in srgb,var(--yellow) 70%,var(--line))}
+.dv.now .id::after{content:" · bloqueia a fase 0";color:var(--amber-ink);font-family:Inter;font-weight:600}
+
+/* ---------- tree ---------- */
+pre.tree{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:15px 17px;overflow-x:auto;
+         font-size:12.5px;line-height:1.68;color:var(--ink-2);margin:0}
+pre.tree b{color:var(--ink);font-weight:500}
+pre.tree i{color:var(--ink-3);font-style:normal}
+
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
+
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:22px 22px 18px}
+  .rail nav{flex-direction:row;flex-wrap:wrap;gap:2px}
+  .rail .grp{display:none}
+  main{padding:28px 22px 72px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+:focus-visible{outline:2px solid var(--yellow);outline-offset:2px;border-radius:4px}
+</style>
+
+<div class="shell">
+<aside class="rail">
+  <div class="mark">
+    <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="#151824" stroke-width="2.4" stroke-linecap="round"><path d="M4 20V8l8-4 8 4v12"/><path d="M2 20h20"/><path d="M12 20v-5"/></svg></span>
+    <b>Portaria</b>
+  </div>
+  <div class="grp">Análise</div>
+  <nav>
+    <a href="#sistema"><span class="n">1</span>O sistema atual</a>
+    <a href="#dados"><span class="n">2</span>O banco, medido</a>
+    <a href="#diverg"><span class="n">3</span>Divergências</a>
+    <a href="#regras"><span class="n">4</span>Regras críticas</a>
+  </nav>
+  <div class="grp">Proposta</div>
+  <nav>
+    <a href="#arq"><span class="n">5</span>Arquitetura</a>
+    <a href="#visual"><span class="n">6</span>Visual</a>
+    <a href="#plano"><span class="n">7</span>Plano de migração</a>
+  </nav>
+  <div class="grp">Você decide</div>
+  <nav>
+    <a href="#dv"><span class="n">8</span>12 decisões</a>
+  </nav>
+</aside>
+
+<main>
+  <p class="eyebrow">Levantamento · 31 de agosto de 2026</p>
+  <h1>Do WinForms para a web,<br><em>sem perder uma regra</em></h1>
+  <p class="lede">Análise do sistema de portaria em C# + SQLite, arquitetura Node proposta e plano de corte em sete fases. Nenhuma linha de código de aplicação foi escrita — o que falta são doze decisões suas.</p>
+  <div class="meta">
+    <span class="tag">4 fluxos · 7.600 linhas de C#</span>
+    <span class="tag">24.791 acessos · 28 MB</span>
+    <span class="tag">38 regras mapeadas</span>
+    <span class="tag hot">3 decisões bloqueiam o início</span>
+  </div>
+
+  <section id="sistema">
+    <h2>1 · O que o sistema faz hoje</h2>
+    <p>Quatro fluxos, operados por 14 porteiros em três turnos. A tela principal <code>Frm_Veiculo.cs</code> tem 1.375 linhas e concentra quase tudo; fechá-la encerra o programa.</p>
+    <div class="wrap"><table>
+      <tr><th>Fluxo</th><th>Origem em C#</th><th>Situação</th></tr>
+      <tr><td>Acesso de veículos</td><td><code>Frm_Veiculo.cs</code></td><td>Entrada, busca por placa/documento, pré-preenchimento, histórico, saída, grade do dia</td></tr>
+      <tr><td>Mercadorias</td><td><code>Frm_Mercadoria.cs</code></td><td>Chegada, retirada e desfazer entrega</td></tr>
+      <tr><td>Auditoria</td><td><code>Auditoria.cs</code></td><td>Trilha append-only. Único módulo com índices no banco</td></tr>
+      <tr><td>Relatórios PDF</td><td><code>Frm_relatorio_*.cs</code></td><td>Por data, personalizado (13 campos) e de mercadorias</td></tr>
+      <tr><td>Usuários e turno</td><td><code>Seguranca.cs</code></td><td>Dois níveis de acesso; troca de turno sem fechar o sistema</td></tr>
+    </table></div>
+    <div class="note">
+      <div class="h">Agendamento não existe</div>
+      <p>O módulo foi removido do código em 27/08/2026 e a tabela ficou órfã com 2 linhas. A estrutura pedida no briefing lista “Agendamentos” dentro da Portaria — <strong>não há nada para migrar</strong>. Se voltar, volta como requisito novo. Também não existem cadastros de pessoas, veículos, empresas ou fornecedores: “prestador” e “agregado” são dois campos de texto na linha do acesso.</p>
+    </div>
+  </section>
+
+  <section id="dados">
+    <h2>2 · O banco, medido — não estimado</h2>
+    <p>Contagens feitas diretamente sobre <code>ControleAcesso.db</code> em modo somente-leitura, hoje. Uma linha de <code>Veiculo</code> é um evento de entrada; os dados do motorista são recopiados a cada visita.</p>
+    <div class="tiles">
+      <div class="tile"><div class="v">24.791</div><div class="k">registros de acesso</div></div>
+      <div class="tile"><div class="v">13.534</div><div class="k">com data e hora</div></div>
+      <div class="tile flag"><div class="v">11.257</div><div class="k">sem data — importação legada</div></div>
+      <div class="tile"><div class="v">1.430</div><div class="k">entradas ainda sem saída</div></div>
+      <div class="tile"><div class="v">9.932</div><div class="k">placas reais (de 10.629 grafias)</div></div>
+      <div class="tile"><div class="v">12.826</div><div class="k">documentos distintos</div></div>
+      <div class="tile"><div class="v">3.514</div><div class="k">empresas em texto livre</div></div>
+      <div class="tile"><div class="v">14</div><div class="k">usuários · 2 nível 1</div></div>
+      <div class="tile zero"><div class="v">0</div><div class="k">índices em <code>Veiculo</code></div></div>
+      <div class="tile zero"><div class="v">0</div><div class="k">mercadorias gravadas</div></div>
+      <div class="tile zero"><div class="v">0</div><div class="k">registros com 2º ajudante</div></div>
+      <div class="tile zero"><div class="v">0</div><div class="k"><code>USUARIOENTRADA</code> preenchido</div></div>
+    </div>
+    <h3>A sujeira que a web precisa tolerar</h3>
+    <div class="wrap"><table>
+      <tr><th>Campo</th><th>O que há na base</th><th>Efeito no projeto</th></tr>
+      <tr><td><code>PLACA</code></td><td>10.172 gravadas com espaço (<code>GCT 6604</code>), o resto sem</td><td>Busca por igualdade perde a maioria. Exige coluna <code>placa_norm</code> indexada</td></tr>
+      <tr><td><code>CPF</code></td><td>10.857 são RG (≤10 dígitos); 94 têm 11 dígitos e DV inválido</td><td>Validar só na escrita, avisando. Bloquear tornaria 94 pessoas ineditáveis</td></tr>
+      <tr><td><code>DataHora</code> × <code>SAIDA</code></td><td>Entrada <code>yyyy-MM-dd</code>, saída <code>dd/MM/yyyy</code></td><td>Saída não é ordenável em SQL. Parse com cultura pt-BR explícita</td></tr>
+      <tr><td><code>PRESTADOR</code></td><td>Quatro estados: <code>SIM</code>, <code>NAO</code>, vazio e <code>NULL</code></td><td>Não é booleano. Vira <code>BOOLEAN NULL</code> — três estados reais</td></tr>
+      <tr><td><code>AGREGADO</code></td><td>Idem, mas <code>NÃO</code> com til — divergente de <code>PRESTADOR</code></td><td>De-para explícito na migração</td></tr>
+      <tr><td><code>TIPOVEICULO</code></td><td><code>¾</code>, <code>3/4</code> e <code>3/4.</code> são o mesmo tipo; <code>FIORINO&nbsp;</code> ≠ <code>FIORINO</code></td><td>Tabela de tipos + aliases, com revisão humana</td></tr>
+    </table></div>
+  </section>
+
+  <section id="diverg">
+    <h2>3 · Onde a documentação diverge do banco real</h2>
+    <p>Seis correções factuais. Duas mudam o plano.</p>
+    <div class="wrap"><table>
+      <tr><th>Ponto</th><th>A doc dizia</th><th>Medição</th><th></th></tr>
+      <tr><td>Saída anterior à entrada</td><td>“É por isso que existe na base”</td><td><strong>0 registros.</strong> E 0 saídas fora do formato esperado</td><td><span class="pill med">corrigido</span></td></tr>
+      <tr><td>Auto-refresh de 5 s</td><td>“Um Timer recarrega a grade”</td><td>O <code>Enabled</code> nunca é ligado — o porteiro atualiza <strong>na mão</strong></td><td><span class="pill div">ganho real</span></td></tr>
+      <tr><td>CPFs com DV inválido</td><td>48 (uma doc) / 72 (outra)</td><td><strong>72</strong> de motorista <strong>+ 22</strong> de ajudante = 94</td><td><span class="pill div">ajustado</span></td></tr>
+      <tr><td>Documentos com pontuação</td><td>846</td><td>551 pelo critério <code>. - / espaço</code></td><td><span class="pill crit">recontar</span></td></tr>
+      <tr><td>Migrar mercadorias</td><td>Passo 9 do roteiro</td><td>A tabela tem <strong>0 linhas</strong></td><td><span class="pill med">simplifica</span></td></tr>
+      <tr><td>Agendamentos</td><td>Na estrutura do briefing</td><td>Módulo removido do C#</td><td><span class="pill crit">fora de escopo</span></td></tr>
+    </table></div>
+    <p>O <em>push</em> por WebSocket, portanto, não é paridade com o desktop — é melhoria. E o <code>CHECK</code> de coerência de datas não vai reprovar nada hoje; continua valendo como rede de segurança.</p>
+  </section>
+
+  <section id="regras">
+    <h2>4 · As regras que não podem mudar</h2>
+    <p>38 regras foram mapeadas com origem no código e destino no sistema web — cada uma vira um teste automatizado. Estas cinco são as que quebram a operação se forem esquecidas.</p>
+    <div class="wrap"><table>
+      <tr><th></th><th>Regra</th><th>Por quê</th></tr>
+      <tr><td class="mono">R12</td><td>“Hoje” sempre no fuso da portaria, nunca UTC</td><td>Com <code>DATE('now')</code> puro a grade esvaziava às 21h, no turno da madrugada. <strong>Bug já pago uma vez.</strong></td></tr>
+      <tr><td class="mono">R04</td><td>A conferência de documento avisa, nunca impede</td><td>RG de 11 dígitos não fecha no cálculo de CPF. Bloquear tornaria impossível registrar essas pessoas</td></tr>
+      <tr><td class="mono">R11</td><td>Grade = entradas de hoje ∪ pendências sem saída de 3 dias</td><td>É o que mantém o veículo que pernoita alcançável pelo botão SAÍDA. O limite de 3 dias evita gravar hora de saída falsa</td></tr>
+      <tr><td class="mono">R27</td><td>PBKDF2-SHA256, 50.000 iterações, salt 16 B, hash 32 B</td><td>Formato portável — <strong>os 14 usuários migram sem trocar de senha</strong></td></tr>
+      <tr><td class="mono">R34</td><td>Auditoria nunca derruba a operação de negócio</td><td>Auditoria que quebra o cadastro vira incentivo para desligá-la</td></tr>
+    </table></div>
+    <p>Uma única correção consciente ao comportamento atual: a busca por documento passa a normalizar o valor, como a de placa já faz. Hoje ela compara texto exato e não encontra os registros gravados com pontuação.</p>
+  </section>
+
+  <section id="arq">
+    <h2>5 · Arquitetura proposta</h2>
+    <p>Monorepo com npm workspaces. O pacote <code>shared</code> é o coração da fidelidade: as regras de <code>Mascaras.cs</code> viram funções puras usadas pelo backend e pelo frontend, testadas uma vez só.</p>
+    <pre class="tree">IMPAKTO-PORTARIA/
+├── apps/
+│   ├── <b>api</b>/        <i>Node 22 · TypeScript · Fastify 5 · Zod · Prisma</i>
+│   │   └── src/modules/
+│   │       ├── auth/  usuarios/  auditoria/
+│   │       └── <b>portaria</b>/   <i>← fase 1</i>
+│   │           └── acessos/ busca/ pessoas/ veiculos/
+│   │              mercadorias/ relatorios/
+│   │       <i>(compras/ rh/ ti/ financeiro/ — pastas futuras)</i>
+│   └── <b>web</b>/        <i>React 19 · Vite · Tailwind v4 · TanStack Query</i>
+└── packages/
+    └── <b>shared</b>/     <i>placa · documento · CPF · senha PBKDF2</i></pre>
+    <p style="margin-top:14px">Cada submódulo tem sempre os mesmos quatro arquivos — rotas, serviço, repositório e schema. Regra de negócio nunca mora na rota. <strong>Adicionar Compras é criar uma pasta e uma linha em <code>app.ts</code>;</strong> nada do que existe é tocado.</p>
+    <h3>Decisões de stack que importam</h3>
+    <div class="wrap"><table>
+      <tr><th>Camada</th><th>Escolha</th><th>Por quê</th></tr>
+      <tr><td>HTTP</td><td>Fastify 5 + Zod</td><td>Um schema valida, tipa e gera a documentação OpenAPI. Plugins de escopo dão a modularidade por setor de graça</td></tr>
+      <tr><td>Dados</td><td>Prisma · SQLite em dev, PostgreSQL em produção</td><td>Permite desenvolver sem servidor, como pedido, e trocar o provider depois. Postgres traz <code>TIMESTAMPTZ</code> de verdade e índice parcial para “quem está dentro”</td></tr>
+      <tr><td>Senha</td><td><code>node:crypto</code> pbkdf2</td><td>Mesmos parâmetros do C# — os hashes existentes continuam válidos</td></tr>
+      <tr><td>Tempo real</td><td>WebSocket</td><td>Substitui o botão ATUALIZAR manual</td></tr>
+      <tr><td>Frontend</td><td>React + Vite, <strong>não Next.js</strong></td><td>O briefing pede frontend separado do backend. Next traria SSR que a portaria não usa — rede interna, sem SEO</td></tr>
+    </table></div>
+    <h3>Permissões sem inventar comportamento</h3>
+    <p>O briefing pede <span class="mono">Usuário → Perfil → Permissões → Módulo</span>; o C# tem só dois níveis. Os 14 usuários migram para <code>ADMINISTRADOR</code> (2) e <code>PORTARIA</code> (12) — ninguém ganha nem perde acesso. Os perfis <code>GESTOR</code> e <code>CONSULTA</code> nascem na estrutura, <strong>sem usuários</strong>, para a granularidade existir sem mudar nada hoje. E a proteção continua em duas camadas: o menu esconde a rota <em>e</em> o backend revalida. Esconder botão não é autorização.</p>
+  </section>
+
+  <section id="visual">
+    <h2>6 · Identidade visual — e onde ela precisa ceder</h2>
+    <p>O guia da Impakto é adotado integralmente: azul <code>#001b5c</code>, amarelo de marca <code>#ecd31b</code> (não o token claro), Inter, cards <code>rounded-3xl</code>, foco amarelo nos inputs, dark mode par a par, ícones lucide. Mas o guia descreve um site institucional, e a portaria é um sistema de balcão.</p>
+    <div class="wrap"><table>
+      <tr><th>Ponto</th><th>No site</th><th>Na portaria</th></tr>
+      <tr><td>Header fixo de 132px</td><td>Vale para o site público</td><td>Não se aplica — layout de app com menu lateral</td></tr>
+      <tr><td>Respiro <code>py-24</code></td><td>Página de marketing</td><td><code>py-6</code>. Rolagem custa tempo com o caminhão no portão</td></tr>
+      <tr><td>Botão “wipe” de 500 ms</td><td>CTA de landing page</td><td>Sólido em SALVAR e SAÍDA — meio segundo atrapalha operação repetitiva</td></tr>
+      <tr><td>Corpo <code>text-base</code></td><td>—</td><td><code>text-lg</code> nas grades. O desktop usa fonte 12 para leitura à distância</td></tr>
+    </table></div>
+    <p>Três cores vêm do desktop, não do guia, e carregam significado operacional — são preservadas literalmente:</p>
+    <p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <span class="pill div">âmbar · pendência de dia anterior</span>
+      <span class="pill med">verde · mercadoria entregue</span>
+      <span class="pill crit">rosa · documento que não fecha</span>
+    </p>
+  </section>
+
+  <section id="plano">
+    <h2>7 · Plano de migração</h2>
+    <div class="phases">
+      <div class="ph"><span class="n">F0</span><span class="t"><b>Fundação</b><span>Monorepo, CI, Postgres em Docker, layout base com a identidade</span></span><span class="d">1 sem</span></div>
+      <div class="ph"><span class="n">F1</span><span class="t"><b>Segurança</b><span>Auth compatível com os hashes atuais, perfis, usuários, auditoria</span></span><span class="d">1 sem</span></div>
+      <div class="ph core"><span class="n">F2</span><span class="t"><b>Portaria — acesso</b><span>Entrada, busca, histórico, grade em tempo real, saída. O núcleo</span></span><span class="d">2 sem</span></div>
+      <div class="ph"><span class="n">F3</span><span class="t"><b>Portaria — apoio</b><span>Mercadorias, relatórios PDF, dashboard</span></span><span class="d">1–2 sem</span></div>
+      <div class="ph"><span class="n">F4</span><span class="t"><b>Migração de dados</b><span>Script idempotente, relatório de pendências, conferências como gate</span></span><span class="d">1 sem</span></div>
+      <div class="ph"><span class="n">F5</span><span class="t"><b>Homologação</b><span>Paralelo com o desktop ainda escrevendo; relatórios conferidos contra os PDFs</span></span><span class="d">1–2 sem</span></div>
+      <div class="ph"><span class="n">F6</span><span class="t"><b>Corte</b><span>Delta, desktop somente-leitura, treinamento, desligamento</span></span><span class="d">1 sem</span></div>
+    </div>
+    <p style="margin-top:14px"><strong>Critério de saída da homologação:</strong> um porteiro opera um turno inteiro na web sem recorrer ao desktop.</p>
+
+    <h3>As conferências que barram o deploy</h3>
+    <p>Não são checklist manual — são asserts no script. Se qualquer uma não bater, a migração falha.</p>
+    <div class="wrap"><table>
+      <tr><th>Conferência</th><th class="num">Esperado</th></tr>
+      <tr><td>Acessos migrados (1:1, nada agregado)</td><td class="num">24.791</td></tr>
+      <tr><td>Com data e hora</td><td class="num">13.534</td></tr>
+      <tr><td>Com saída registrada</td><td class="num">12.104</td></tr>
+      <tr><td>Acompanhantes</td><td class="num">3.379</td></tr>
+      <tr><td>Veículos após consolidar placas</td><td class="num">9.932</td></tr>
+      <tr><td>Usuários (2 admin, 12 porteiro)</td><td class="num">14</td></tr>
+      <tr><td>Acessos sem pessoa vinculada</td><td class="num">0</td></tr>
+    </table></div>
+    <div class="note">
+      <div class="h">Recontagem obrigatória</div>
+      <p>Estes números são de hoje e o desktop segue em produção a ~2.900 entradas por mês. Rode as contagens de novo imediatamente antes da migração final e use os valores frescos como gate — não estes.</p>
+    </div>
+
+    <h3>Regras invioláveis</h3>
+    <p>O script de migração <strong>só lê</strong> — nunca apaga nem altera o banco original, e roda sempre sobre uma cópia com md5 conferido. É idempotente, via <code>legado_id</code>. E desktop e web <strong>nunca escrevem ao mesmo tempo</strong>: SQLite em arquivo não tolera dois donos.</p>
+    <div class="note">
+      <div class="h">Risco a tratar antes de tudo</div>
+      <p>O banco de produção vive em <code>bin/Debug/</code>. Um <em>Clean</em> do Visual Studio apaga a cópia de trabalho, e o que foi cadastrado desde o último refresh não volta. Tirar o banco da pasta de build e ligar backup diário é independente da migração — e é para ontem.</p>
+    </div>
+  </section>
+
+  <section id="dv">
+    <h2>8 · Doze decisões que são suas</h2>
+    <p>Nenhuma dessas lacunas foi preenchida por suposição. As três primeiras precisam de resposta antes da fase 0; as demais podem esperar até a fase que as consome.</p>
+    <div class="dvs">
+      <div class="dv now"><div class="id">DV1</div><div class="q">PostgreSQL ou SQL Server?</div><p>Existe licença de SQL Server disponível? O Prisma suporta os dois — trocar agora é barato, depois da fase 4 é caro.</p><div class="prop"><b>Proposta:</b> PostgreSQL 16.</div></div>
+      <div class="dv now"><div class="id">DV2</div><div class="q">Onde o sistema vai rodar?</div><p>Servidor interno já existe ou precisa ser provisionado? Só rede interna, ou também pela internet? Decide HTTPS, certificado, VPN e CORS.</p></div>
+      <div class="dv now"><div class="id">DV4</div><div class="q">Como gerar os PDFs?</div><p>O QuestPDF não existe em Node. Puppeteer renderiza HTML/CSS mas pede Chromium no servidor; pdfmake é leve e mais trabalhoso em paisagem.</p><div class="prop"><b>Proposta:</b> Puppeteer — os relatórios precisam bater visualmente com os do desktop na homologação.</div></div>
+      <div class="dv"><div class="id">DV3</div><div class="q">Cadastro de pessoas já na fase 2?</div><p>A busca continua sendo “última visita”, como o porteiro está acostumado, ou vira cadastro consultável?</p><div class="prop"><b>Proposta:</b> manter o hábito na fase 2, liberar o cadastro na fase 3. O modelo suporta as duas.</div></div>
+      <div class="dv"><div class="id">DV5</div><div class="q">Por quanto tempo guardar os dados?</div><p>A base tem CPF, RG, nome e celular de ~12.800 pessoas. A retenção precisa de definição do jurídico (LGPD).</p></div>
+      <div class="dv"><div class="id">DV6</div><div class="q">Quem revisa os tipos de veículo?</div><p>Consolidar <code>¾</code>, <code>3/4</code> e <code>3/4.</code> num tipo só exige alguém da portaria aprovando o de-para antes da fase 4.</p></div>
+      <div class="dv"><div class="id">DV7</div><div class="q">Agendamento volta?</div><p>Removido do desktop, tabela órfã. Se voltar, volta como requisito novo com modelagem própria — não como migração.</p></div>
+      <div class="dv"><div class="id">DV8</div><div class="q">Quanto dura a sessão?</div><p>Turno de 8h sem re-login, ou expiração curta com refresh? Na web não existe “fechar o programa” para auditar.</p><div class="prop"><b>Proposta:</b> token de 15 min + refresh de 12h em cookie httpOnly.</div></div>
+      <div class="dv"><div class="id">DV9</div><div class="q">Manter o beep da placa?</div><p>O desktop apita ao recusar caractere inválido. No navegador isso exige AudioContext e pode incomodar no balcão.</p></div>
+      <div class="dv"><div class="id">DV10</div><div class="q">Continuam sendo 5 ajudantes?</div><p>Zero registros usam do 2º ao 5º — o limite nunca foi exercitado.</p><div class="prop"><b>Proposta:</b> manter 5 como validação configurável; a tabela não impõe limite.</div></div>
+      <div class="dv"><div class="id">DV11</div><div class="q">Vai existir mais de uma guarita?</div><p>Prever a coluna de portaria nas tabelas de movimento custa quase nada agora e caro depois.</p></div>
+      <div class="dv"><div class="id">DV12</div><div class="q">Como é a rede da guarita?</div><p>Wi-Fi ou cabo? Tablet no horizonte? A escolha por SPA já tolera rede instável, mas o WebSocket precisa de fallback por polling.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    Levantado a partir de <code>PROJETO-WEB.md</code>, <code>identidade-visual.md</code>, <code>BANCOS.md</code>, <code>TELA-CADASTRO-VEICULO.md</code>, do código em <code>src/Portaria/</code> e da medição direta de <code>ControleAcesso.db</code>. Documento completo, com as 38 regras e a tabela de rastreabilidade C# × Web, em <code>docs/00-LEVANTAMENTO-E-ARQUITETURA.md</code>.
+  </footer>
+</main>
+</div>
