@@ -4,7 +4,12 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 
 import { App } from './App.js';
+import { aplicarTema, observarSistema } from './tema.js';
 import './estilos/global.css';
+
+// Antes de renderizar, para a tela não piscar no tema errado.
+aplicarTema();
+observarSistema();
 
 const cliente = new QueryClient({
   defaultOptions: {

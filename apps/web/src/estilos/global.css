@@ -10,7 +10,21 @@
  * institucional e isto é um sistema de balcão. Ver §2 do levantamento.
  */
 
+/*
+ * Inter empacotada com a aplicação, não vinda do Google Fonts.
+ * A portaria roda em rede interna, possivelmente sem internet: um <link> para
+ * fonts.googleapis.com cairia em fallback silencioso justamente lá.
+ */
+@import '@fontsource-variable/inter';
 @import 'tailwindcss';
+
+/*
+ * Dark mode POR CLASSE, como o guia da identidade especifica.
+ * O padrão do Tailwind v4 é `prefers-color-scheme`, que ignora a escolha do
+ * usuário — e num balcão a preferência do sistema operacional raramente é a
+ * que o porteiro quer. A classe é aplicada em `src/tema.ts`.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-marca: #ecd31b;
@@ -25,7 +39,7 @@
   --color-entregue-texto: #006100;
   --color-documento-invalido: #ffcdcd;
 
-  --font-sans: 'Inter', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
 }
 
 @layer base {

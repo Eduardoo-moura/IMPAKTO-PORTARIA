@@ -14,15 +14,20 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
+  Moon,
   ScrollText,
   Settings,
   ShieldCheck,
+  Sun,
   Truck,
   UserCog,
   type LucideIcon,
 } from 'lucide-react';
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
+
+import { aplicarTema, temaSalvo, type Tema } from '../tema.js';
 
 export type ItemDeMenu = {
   rotulo: string;
@@ -69,6 +74,15 @@ type Props = {
 
 export function AppLayout({ children, usuario, permissoes, aoTrocarTurno }: Props) {
   const podeVer = (item: ItemDeMenu): boolean => !item.permissao || permissoes.includes(item.permissao);
+
+  const [tema, setTema] = useState<Tema>(temaSalvo);
+  const escuro = document.documentElement.classList.contains('dark');
+
+  function alternarTema() {
+    const proximo: Tema = escuro ? 'claro' : 'escuro';
+    aplicarTema(proximo);
+    setTema(proximo);
+  }
 
   return (
     <div className="flex h-full">
@@ -133,6 +147,16 @@ export function AppLayout({ children, usuario, permissoes, aoTrocarTurno }: Prop
           >
             <LogOut className="size-5 shrink-0" aria-hidden />
             Trocar turno
+          </button>
+          <button
+            type="button"
+            onClick={alternarTema}
+            aria-pressed={escuro}
+            title={tema === 'sistema' ? 'Seguindo o tema do sistema' : undefined}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-blue-50 transition-colors hover:bg-white/10 dark:text-gray-300"
+          >
+            {escuro ? <Sun className="size-5 shrink-0" aria-hidden /> : <Moon className="size-5 shrink-0" aria-hidden />}
+            {escuro ? 'Tema claro' : 'Tema escuro'}
           </button>
         </div>
       </aside>
