@@ -1,0 +1,299 @@
+// Modelo de dados do sistema Impakto.
+//
+// Princípio (PROJETO-WEB §6.1): o desktop tem uma tabela achatada de eventos;
+// aqui o CADASTRO (pessoa, veículo, empresa, tipo) é separado do MOVIMENTO
+// (acesso, acompanhante, mercadoria). Isso resolve de uma vez a duplicação, o
+// pré-preenchimento e a consolidação de empresas.
+//
+// Mas a migração não pode perder nada: os 24.791 registros existentes viram
+// acessos 1:1, e as pessoas/veículos são deduzidos deles.
+//
+// Provider: PostgreSQL. O modelo depende de três recursos que o SQLite não tem
+// — TIMESTAMPTZ, JSONB e índice parcial (`WHERE saida_em IS NULL`). Manter dois
+// providers faria o schema de desenvolvimento divergir do de produção.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- SEGURANÇA
+
+/// Perfis e permissões (briefing §10: Usuário → Perfil → Permissões → Módulo).
+/// O desktop tem só dois níveis; o mapeamento inicial não muda o acesso de
+/// ninguém: NIVEL 1 → ADMINISTRADOR, NIVEL 2 → PORTARIA.
+model Perfil {
+  id          BigInt              @id @default(autoincrement())
+  nome        String              @unique @db.VarChar(40)
+  descricao   String?
+  /// Perfis de sistema não podem ser apagados pela tela.
+  deSistema   Boolean             @default(false) @map("de_sistema")
+  criadoEm    DateTime            @default(now()) @map("criado_em") @db.Timestamptz(3)
+  usuarios    Usuario[]
+  permissoes  PerfilPermissao[]
+
+  @@map("perfil")
+}
+
+/// Chave textual `modulo.recurso.acao` — ex.: `portaria.acesso.criar`.
+/// Um setor novo acrescenta linhas aqui, sem alterar estrutura.
+model Permissao {
+  id        BigInt            @id @default(autoincrement())
+  chave     String            @unique @db.VarChar(80)
+  modulo    String            @db.VarChar(40)
+  descricao String
+  perfis    PerfilPermissao[]
+
+  @@index([modulo])
+  @@map("permissao")
+}
+
+model PerfilPermissao {
+  perfilId    BigInt    @map("perfil_id")
+  permissaoId BigInt    @map("permissao_id")
+  perfil      Perfil    @relation(fields: [perfilId], references: [id], onDelete: Cascade)
+  permissao   Permissao @relation(fields: [permissaoId], references: [id], onDelete: Cascade)
+
+  @@id([perfilId, permissaoId])
+  @@map("perfil_permissao")
+}
+
+model Usuario {
+  id            BigInt    @id @default(autoincrement())
+  login         String    @db.VarChar(40)
+  /// Equivale ao COLLATE NOCASE do SQLite.
+  loginNorm     String    @unique @map("login_norm") @db.VarChar(40)
+  nome          String?
+  /// `PBKDF2$50000$salt$hash` — mesmo formato do desktop (R27).
+  /// Nunca sai da API: excluído em toda projeção de resposta.
+  senhaHash     String    @map("senha_hash")
+  perfilId      BigInt    @map("perfil_id")
+  /// NIVEL original do desktop (1 ou 2), preservado para conferir a migração.
+  nivelLegado   Int?      @map("nivel_legado")
+  ativo         Boolean   @default(true)
+  /// Força troca no primeiro login — usado no `admin` migrado (risco: admin/admin).
+  trocarSenha   Boolean   @default(false) @map("trocar_senha")
+  ultimoLoginEm DateTime? @map("ultimo_login_em") @db.Timestamptz(3)
+  criadoEm      DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  perfil            Perfil       @relation(fields: [perfilId], references: [id])
+  acessosRegistrados Acesso[]    @relation("AcessoUsuarioEntrada")
+  saidasRegistradas  Acesso[]    @relation("AcessoUsuarioSaida")
+  mercadoriasRecebidas Mercadoria[] @relation("MercadoriaUsuarioRegistro")
+  mercadoriasEntregues Mercadoria[] @relation("MercadoriaUsuarioEntrega")
+  auditoria         Auditoria[]
+
+  @@map("usuario")
+}
+
+/// Trilha append-only. R34: a falha ao gravar aqui NUNCA derruba a operação de
+/// negócio — auditoria que quebra o cadastro vira incentivo para desligá-la.
+model Auditoria {
+  id           BigInt   @id @default(autoincrement())
+  em           DateTime @default(now()) @db.Timestamptz(3)
+  usuarioId    BigInt?  @map("usuario_id")
+  /// Preservado mesmo se o usuário for removido.
+  usuarioLogin String?  @map("usuario_login") @db.VarChar(40)
+  /// Congelado no momento do evento, para a trilha não mudar se o nome mudar (R33).
+  usuarioNome  String?  @map("usuario_nome")
+  tipo         String   @db.VarChar(20)
+  acao         String   @db.VarChar(40)
+  /// Identificador do alvo: placa, id, login.
+  registro     String?
+  detalhe      String?
+  /// Antes/depois, quando fizer sentido (ex.: entrega desfeita — R24).
+  dados        Json?
+  ip           String?  @db.VarChar(45)
+  maquina      String?
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([em(sort: Desc)])
+  @@index([usuarioLogin, em(sort: Desc)])
+  @@index([tipo, em(sort: Desc)])
+  @@map("auditoria")
+}
+
+// ------------------------------------------------------------------ CADASTRO
+
+model Empresa {
+  id       BigInt   @id @default(autoincrement())
+  nome     String
+  /// Maiúsculas, sem acento, sem espaço duplicado.
+  /// ATENÇÃO: não é deduplicação por similaridade. As 3.514 empresas em texto
+  /// livre migram 1:1 — fundir por semelhança é tarefa posterior, com UI.
+  nomeNorm String   @unique @map("nome_norm")
+  cnpj     String?  @db.VarChar(14)
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  pessoas      Pessoa[]
+  acessos      Acesso[]
+  mercadorias  Mercadoria[]
+
+  @@map("empresa")
+}
+
+model Pessoa {
+  id            BigInt   @id @default(autoincrement())
+  /// Como digitado.
+  documento     String
+  /// Só letras e dígitos, maiúsculas. Resolve os documentos com pontuação (R09).
+  documentoNorm String   @unique @map("documento_norm")
+  /// CPF | RG | OUTRO. Os 94 legados com DV inválido entram como OUTRO —
+  /// migram e vão para o relatório de pendências, nunca são rejeitados (R04).
+  tipoDocumento String   @map("tipo_documento") @db.VarChar(10)
+  nome          String
+  celular       String?  @db.VarChar(20)
+  empresaId     BigInt?  @map("empresa_id")
+  observacao    String?
+  ativo         Boolean  @default(true)
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  empresa        Empresa?             @relation(fields: [empresaId], references: [id])
+  acessos        Acesso[]
+  acompanhamentos AcessoAcompanhante[]
+
+  @@index([nome])
+  @@map("pessoa")
+}
+
+/// Resolve `¾` vs `3/4` vs `3/4.` e `FIORINO ` vs `FIORINO`.
+model TipoVeiculo {
+  id     BigInt  @id @default(autoincrement())
+  nome   String  @unique
+  ativo  Boolean @default(true)
+
+  aliases  TipoVeiculoAlias[]
+  veiculos Veiculo[]
+
+  @@map("tipo_veiculo")
+}
+
+/// De-para da migração e da digitação livre. Preenchido com REVISÃO HUMANA
+/// OBRIGATÓRIA (DV6) — nenhuma consolidação é feita por heurística.
+model TipoVeiculoAlias {
+  alias  String @id
+  tipoId BigInt @map("tipo_id")
+  tipo   TipoVeiculo @relation(fields: [tipoId], references: [id], onDelete: Cascade)
+
+  @@map("tipo_veiculo_alias")
+}
+
+model Veiculo {
+  id        BigInt   @id @default(autoincrement())
+  /// Como gravada/digitada — aceita `S/ PLACA` (R02).
+  placa     String
+  /// Só letras e dígitos, maiúsculas. Indexada: é o que faz a busca responder
+  /// em < 300 ms com o caminhão parado no portão (R03).
+  placaNorm String   @map("placa_norm")
+  tipoId    BigInt?  @map("tipo_id")
+  criadoEm  DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  tipo    TipoVeiculo? @relation(fields: [tipoId], references: [id])
+  acessos Acesso[]
+
+  @@index([placaNorm])
+  @@map("veiculo")
+}
+
+// ------------------------------------------------------------------ MOVIMENTO
+
+model Acesso {
+  id        BigInt  @id @default(autoincrement())
+  pessoaId  BigInt  @map("pessoa_id")
+  veiculoId BigInt? @map("veiculo_id")
+  empresaId BigInt? @map("empresa_id")
+
+  /// Snapshot: o que foi digitado no momento do acesso, imutável.
+  /// Um registro de controle de acesso é documento histórico — se a pessoa
+  /// muda de empresa, o acesso do ano passado continua mostrando a antiga.
+  nomeSnapshot        String  @map("nome_snapshot")
+  documentoSnapshot   String  @map("documento_snapshot")
+  placaSnapshot       String? @map("placa_snapshot")
+  empresaSnapshot     String? @map("empresa_snapshot")
+  tipoVeiculoSnapshot String? @map("tipo_veiculo_snapshot")
+  celularSnapshot     String? @map("celular_snapshot")
+
+  /// NULL = registro legado sem data (11.257 linhas). É a única forma honesta
+  /// de representá-los; os filtros de período os excluem naturalmente (R13).
+  entradaEm DateTime? @map("entrada_em") @db.Timestamptz(3)
+  /// NULL = ainda dentro.
+  saidaEm   DateTime? @map("saida_em") @db.Timestamptz(3)
+
+  /// Três estados reais: sim, não e "não informado". Colapsar '' e NULL em
+  /// false inventaria informação sobre 11.257 registros.
+  prestador Boolean?
+  agregado  Boolean?
+
+  usuarioEntradaId    BigInt? @map("usuario_entrada_id")
+  /// Preserva o login mesmo de usuário já removido (filtro `(REMOVIDO)` — R37).
+  usuarioEntradaLogin String? @map("usuario_entrada_login") @db.VarChar(40)
+  usuarioSaidaId      BigInt? @map("usuario_saida_id")
+
+  /// WEB | MIGRACAO_DESKTOP
+  origem    String   @default("WEB") @db.VarChar(20)
+  /// `Veiculo.ID` original — torna a migração idempotente e rastreável.
+  legadoId  BigInt?  @unique @map("legado_id")
+  criadoEm  DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  pessoa         Pessoa               @relation(fields: [pessoaId], references: [id])
+  veiculo        Veiculo?             @relation(fields: [veiculoId], references: [id])
+  empresa        Empresa?             @relation(fields: [empresaId], references: [id])
+  usuarioEntrada Usuario?             @relation("AcessoUsuarioEntrada", fields: [usuarioEntradaId], references: [id])
+  usuarioSaida   Usuario?             @relation("AcessoUsuarioSaida", fields: [usuarioSaidaId], references: [id])
+  acompanhantes  AcessoAcompanhante[]
+
+  @@index([entradaEm(sort: Desc)])
+  @@index([pessoaId, entradaEm(sort: Desc)])
+  @@index([veiculoId, entradaEm(sort: Desc)])
+  @@map("acesso")
+}
+
+/// Substitui os cinco pares de colunas CPFAJUDANTE2..5 do desktop.
+/// Zero registros legados usam do 2º ao 5º — a coleção nasce limpa (R07).
+model AcessoAcompanhante {
+  id                BigInt  @id @default(autoincrement())
+  acessoId          BigInt  @map("acesso_id")
+  pessoaId          BigInt? @map("pessoa_id")
+  documentoSnapshot String? @map("documento_snapshot")
+  nomeSnapshot      String  @map("nome_snapshot")
+  /// Sequencial e sem buracos: quem preencheu o 3º e deixou o 2º vazio é
+  /// gravado como 2º, igual ao `AjudantesPreenchidos()` do desktop.
+  ordem             Int     @default(1)
+
+  acesso Acesso  @relation(fields: [acessoId], references: [id], onDelete: Cascade)
+  pessoa Pessoa? @relation(fields: [pessoaId], references: [id])
+
+  @@unique([acessoId, ordem])
+  @@index([acessoId])
+  @@map("acesso_acompanhante")
+}
+
+model Mercadoria {
+  id              BigInt   @id @default(autoincrement())
+  chegadaEm       DateTime @default(now()) @map("chegada_em") @db.Timestamptz(3)
+  /// Único campo obrigatório (R23).
+  destinatario    String
+  empresaId       BigInt?  @map("empresa_id")
+  empresaSnapshot String?  @map("empresa_snapshot")
+  /// Quem trouxe.
+  entregador      String?
+  usuarioRegistroId BigInt? @map("usuario_registro_id")
+
+  /// NULL = ainda na portaria. O timestamp carrega mais informação que a flag
+  /// `ENTREGUE = 'SIM'` do desktop, e o índice parcial dá a lista de pendentes.
+  entregueEm       DateTime? @map("entregue_em") @db.Timestamptz(3)
+  retiradoPor      String?   @map("retirado_por")
+  usuarioEntregaId BigInt?   @map("usuario_entrega_id")
+
+  empresa         Empresa? @relation(fields: [empresaId], references: [id])
+  usuarioRegistro Usuario? @relation("MercadoriaUsuarioRegistro", fields: [usuarioRegistroId], references: [id])
+  usuarioEntrega  Usuario? @relation("MercadoriaUsuarioEntrega", fields: [usuarioEntregaId], references: [id])
+
+  @@index([chegadaEm(sort: Desc)])
+  @@map("mercadoria")
+}
