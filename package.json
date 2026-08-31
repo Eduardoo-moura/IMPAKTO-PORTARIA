@@ -14,7 +14,7 @@
     "dev": "npm run dev --workspace @impakto/api & npm run dev --workspace @impakto/web",
     "dev:api": "npm run dev --workspace @impakto/api",
     "dev:web": "npm run dev --workspace @impakto/web",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace @impakto/shared && npm run build --workspace @impakto/api && npm run build --workspace @impakto/web",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "npm run typecheck --workspaces --if-present",
@@ -22,7 +22,11 @@
     "db:up": "docker compose up -d db",
     "db:migrate": "npm run db:migrate --workspace @impakto/api",
     "db:seed": "npm run db:seed --workspace @impakto/api",
-    "db:studio": "npm run db:studio --workspace @impakto/api"
+    "db:studio": "npm run db:studio --workspace @impakto/api",
+    "hml": "npm run build && npm run start:hml --workspace @impakto/api",
+    "hml:db": "node scripts/banco-local.mjs",
+    "predev:api": "npm run build --workspace @impakto/shared",
+    "predev:web": "npm run build --workspace @impakto/shared"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

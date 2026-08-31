@@ -105,17 +105,34 @@ funções puras aqui, usadas **pelo backend e pelo frontend**, testadas uma vez 
 
 ## Instalação
 
-Requisitos: **Node 22+** e **Docker** (para o Postgres de desenvolvimento).
+Requisito: **Node 22+**. Para o banco há três caminhos — escolha um.
 
 ```bash
 npm install
 cp .env.example .env      # e ajuste (ver abaixo)
-npm run db:up             # sobe o Postgres
-npm run db:migrate --workspace @impakto/api
-npm run db:seed --workspace @impakto/api
 ```
 
-Sem Docker, aponte `DATABASE_URL` para qualquer PostgreSQL 16 acessível e pule o `db:up`.
+**a) PostgreSQL portátil (é o que está montado nesta máquina)** — sem Docker, sem instalação,
+sem serviço do Windows. Os binários e os dados ficam em `%USERPROFILE%\.impakto`; para desfazer,
+pare o banco e apague a pasta. Escuta em **localhost:5433**, de propósito: um PostgreSQL
+instalado depois na 5432 padrão não conflita.
+
+```bash
+npm run hml:db            # start | stop | status | log
+```
+
+O script explica como recriar a instalação do zero se a pasta não existir.
+
+**b) Docker**, se houver na máquina: `npm run db:up` (usa a 5432 — ajuste a `DATABASE_URL`).
+
+**c) Qualquer PostgreSQL 16 acessível**: aponte a `DATABASE_URL` e siga.
+
+Depois, em qualquer um dos casos:
+
+```bash
+npm run db:deploy --workspace @impakto/api   # aplica as migrations
+npm run db:seed   --workspace @impakto/api   # perfis, permissões e admin
+```
 
 ## Variáveis de ambiente
 
@@ -143,12 +160,35 @@ O `.env` está no `.gitignore` e **nunca** deve ser versionado.
 
 ## Execução
 
+**Desenvolvimento** — dois processos, com hot reload:
+
 ```bash
 npm run dev:api     # http://localhost:3333  · docs em /docs
 npm run dev:web     # http://localhost:5173
 ```
 
 O Vite faz proxy de `/api` para a porta 3333.
+
+**Homologação local** — um processo e **uma URL só**, que é como a portaria vai usar:
+
+```bash
+npm run hml:db start   # se o banco não estiver no ar
+npm run hml            # compila tudo e sobe
+```
+
+| | URL |
+|---|---|
+| Sistema | `http://localhost:3333` |
+| Pela rede local | `http://<ip-da-maquina>:3333` |
+| Documentação da API | `http://localhost:3333/docs` |
+| Verificação de saúde | `http://localhost:3333/api/saude` |
+
+A API serve o build do frontend (`apps/web/dist`) e devolve o `index.html` em qualquer rota que
+não seja `/api` ou `/docs` — dar F5 numa rota interna não cai em 404. Sem o build, a API sobe
+normal e responde só as rotas de dados, avisando no log.
+
+> O `hml` da rede local só responde se o Firewall do Windows liberar a porta 3333 para redes
+> privadas. Para um HML de verdade em servidor, falta a **DV2** (hospedagem).
 
 ## Testes
 
@@ -164,8 +204,9 @@ funções sem alterar o teste correspondente é alterar o comportamento do siste
 ## Banco de dados
 
 ```bash
-npm run db:up                                  # Postgres em Docker
-npm run db:migrate  --workspace @impakto/api   # aplica migrations
+npm run hml:db start                           # Postgres portátil (ou db:up, com Docker)
+npm run db:deploy   --workspace @impakto/api   # aplica migrations
+npm run db:migrate  --workspace @impakto/api   # cria migration nova, em desenvolvimento
 npm run db:studio   --workspace @impakto/api   # inspeção visual
 npm run db:generate --workspace @impakto/api   # regenera o client
 ```

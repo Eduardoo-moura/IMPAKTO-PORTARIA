@@ -4,8 +4,12 @@
     "rootDir": "src",
     "outDir": "dist",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "noEmit": true
+    "moduleResolution": "Bundler"
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "**/*.test.ts"
+  ]
 }

@@ -46,13 +46,20 @@ export const dadosInvalidos = (mensagem: string, campos?: CampoInvalido[]) =>
 export const exigeConfirmacao = (codigo: string, mensagem: string, contexto?: Record<string, unknown>) =>
   new AppError(409, codigo, mensagem, undefined, contexto);
 
-export function registrarTratamentoDeErros(app: FastifyInstance): void {
+/**
+ * 404 em JSON. Só é usado quando a API roda sozinha — servindo o frontend,
+ * quem trata o 404 é `registrarFrontend`, porque o roteamento é do cliente.
+ * O Fastify aceita um único `setNotFoundHandler` por escopo.
+ */
+export function registrarRotaNaoEncontrada(app: FastifyInstance): void {
   app.setNotFoundHandler((req: FastifyRequest, reply: FastifyReply) => {
     reply.status(404).send({
       erro: { codigo: 'ROTA_NAO_ENCONTRADA', mensagem: `Rota ${req.method} ${req.url} não existe.` },
     });
   });
+}
 
+export function registrarTratamentoDeErros(app: FastifyInstance): void {
   app.setErrorHandler((erro, req, reply) => {
     if (erro instanceof AppError) {
       if (erro.status >= 500) req.log.error({ erro, contexto: erro.contexto }, erro.message);

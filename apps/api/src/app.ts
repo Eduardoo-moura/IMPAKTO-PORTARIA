@@ -21,7 +21,8 @@ import {
 } from 'fastify-type-provider-zod';
 
 import { ehProducao, env, origensPermitidas } from './config/env.js';
-import { registrarTratamentoDeErros } from './infra/errors.js';
+import { registrarRotaNaoEncontrada, registrarTratamentoDeErros } from './infra/errors.js';
+import { registrarFrontend } from './infra/estaticos.js';
 import { opcoesDeLog } from './infra/logger.js';
 import { rotasDeSaude } from './modules/saude/saude.routes.js';
 
@@ -93,6 +94,11 @@ export async function montarApp(): Promise<FastifyInstance> {
 
   // Setores futuros entram exatamente da mesma forma:
   // await app.register(modCompras, { prefix: '/api/compras' });
+
+  // Por último: o frontend compilado, se existir. Ele assume o 404 para
+  // devolver o index.html nas rotas do cliente.
+  const servindoFrontend = await registrarFrontend(app);
+  if (!servindoFrontend) registrarRotaNaoEncontrada(app);
 
   return app;
 }

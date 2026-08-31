@@ -13,7 +13,8 @@
     "db:generate": "dotenv -e ../../.env -- prisma generate",
     "db:studio": "dotenv -e ../../.env -- prisma studio",
     "db:validate": "dotenv -e ../../.env -- prisma validate",
-    "db:seed": "tsx --env-file=../../.env prisma/seed.ts"
+    "db:seed": "tsx --env-file=../../.env prisma/seed.ts",
+    "start:hml": "node --env-file=../../.env dist/server.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -24,6 +25,7 @@
     "@fastify/helmet": "^13.0.0",
     "@fastify/jwt": "^9.0.1",
     "@fastify/rate-limit": "^10.2.0",
+    "@fastify/static": "^9.3.0",
     "@fastify/swagger": "^9.4.0",
     "@fastify/swagger-ui": "^5.2.0",
     "@fastify/websocket": "^11.0.1",
