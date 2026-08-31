@@ -406,16 +406,21 @@ atual). Entram na fase 3, sobre dados nascidos na web.
 
 ### 4.1 Fases
 
-| Fase | Entrega | Estimativa |
-|---|---|---|
-| **0** — Fundação | Monorepo, Fastify+Prisma+Vite rodando, CI, Docker Compose com Postgres, layout base com a identidade visual | 1 semana |
-| **1** — Segurança | Auth (PBKDF2 compatível), perfis/permissões, CRUD de usuários, auditoria, testes R27–R34 | 1 semana |
-| **2** — Portaria: acesso | Entrada, busca, histórico, grade em tempo real, saída. **O núcleo.** | 2 semanas |
-| **3** — Portaria: apoio | Mercadorias, relatórios PDF, dashboard | 1–2 semanas |
-| **4** — Migração de dados | Script idempotente + relatório de pendências + conferências como gate | 1 semana |
-| **5** — Homologação | Web e desktop em paralelo, **desktop ainda como fonte de escrita**; relatórios conferidos contra os PDFs do desktop | 1–2 semanas |
-| **6** — Corte | Migração delta, desktop somente-leitura, treinamento, desligamento | 1 semana |
-| **7+** | Compras → RH → TI → Financeiro | — |
+Numeração do briefing (seção 17) — **é a única usada no projeto**.
+
+| Fase | Entrega | Estimativa | Estado |
+|---|---|---|---|
+| **1** — Análise do sistema existente | Este documento | — | ✅ concluída |
+| **2** — Arquitetura | Monorepo, stack, modelo de dados | — | ✅ concluída |
+| **3** — Banco de dados | Schema, migration com CHECK e índices parciais, seed | — | ✅ aplicada |
+| **4** — Autenticação | Login, sessão, permissões, troca de senha e de turno, auditoria | 1 semana | 🔄 em curso |
+| **5** — Estrutura base do frontend | Layout, identidade visual, roteamento | — | ✅ concluída |
+| **6** — Módulo Portaria | Entrada, busca, histórico, grade, saída, mercadorias, relatórios | 3–4 semanas | ❌ |
+| **7** — Testes e comparação com o C# | Cobertura das 38 regras | contínua | 🔄 parcial |
+| **8** — Migração dos dados | Script idempotente + relatório de pendências + conferências como gate | 1 semana | ❌ |
+| **9** — Homologação | Web e desktop em paralelo, **desktop ainda como fonte de escrita** | 1–2 semanas | 🔄 ambiente montado |
+| **10** — Produção | Migração delta, desktop somente-leitura, treinamento, desligamento | 1 semana | ❌ |
+| **11–13** | Compras → RH → TI | — | ❌ |
 
 **Critério de saída da fase 5:** um porteiro opera um turno inteiro na web sem recorrer ao desktop.
 
@@ -486,13 +491,13 @@ valores frescos como gate — não estes.
 
 | Sistema C# | Sistema Web | Fase | Status |
 |---|---|---|---|
-| `Frm_Login` | `POST /api/auth/login` + `/login` | 1 | Pendente |
-| `TrocarUsuario()` | `POST /api/auth/trocar-turno` + modal | 1 | Pendente |
-| `Seguranca.SenhaConfere` | `shared/senha.ts` (PBKDF2 compatível) | 1 | Pendente |
-| `Nivel.Total/Restrito` | perfis `ADMINISTRADOR`/`PORTARIA` | 1 | Pendente |
-| `Frm_Usuarios` | `/api/usuarios` + `/config/usuarios` | 1 | Pendente |
-| `Auditoria.cs` | serviço `auditoria` | 1 | Pendente |
-| `Frm_Auditoria` | `GET /api/auditoria` + `/config/auditoria` | 1 | Pendente |
+| `Frm_Login` | `POST /api/auth/login` + `/login` | 4 | ✅ Migrado |
+| `TrocarUsuario()` | `POST /api/auth/trocar-turno` + modal | 4 | ✅ Migrado |
+| `Seguranca.SenhaConfere` | `shared/senha.ts` (PBKDF2 compatível) | 4 | ✅ Migrado |
+| `Nivel.Total/Restrito` | perfis `ADMINISTRADOR`/`PORTARIA` | 4 | ✅ Migrado |
+| `Frm_Usuarios` | `/api/usuarios` + `/config/usuarios` | 4 | Pendente |
+| `Auditoria.cs` | serviço `auditoria` | 4 | ✅ Migrado (gravação) |
+| `Frm_Auditoria` | `GET /api/auditoria` + `/config/auditoria` | 4 | Pendente (consulta) |
 | `Mascaras.Placa` | `shared/validators/placa.ts` | 2 | Pendente |
 | `Mascaras.Documento` | `shared/validators/documento.ts` | 2 | Pendente |
 | `Frm_Veiculo.btn_Salvar` | `POST /api/portaria/acessos` | 2 | Pendente |
@@ -554,6 +559,14 @@ Precisa de definição do jurídico.
 *Proposta:* logout explícito → `SAIDA DO SISTEMA`; expiração → `SESSAO EXPIRADA`.
 Tempo de sessão: turno de 8h sem re-login, ou expiração curta com refresh?
 *Proposta: token de 15 min + refresh de 12h em cookie httpOnly.*
+
+**DV8 resolvida na Fase 4** — token de acesso de 15 min no corpo da resposta (guardado em
+memória pelo cliente) + refresh de 12 h em cookie `httpOnly` com `SameSite=Strict`. O logout
+explícito grava `SAIDA DO SISTEMA`; a expiração tem ação própria, `SESSAO EXPIRADA`.
+*Limitação assumida:* o refresh é um JWT, não uma sessão em banco, então não há revogação
+imediata — mas `autenticado` recarrega a sessão do banco a cada requisição, de modo que um
+usuário desativado perde o acesso em no máximo 15 minutos. Se um dia for preciso derrubar
+sessão na hora, entra uma tabela `sessao`.
 
 **DV9 — Beep na tecla inválida.** O desktop dá beep ao recusar caractere na placa. No navegador
 exige `AudioContext` e pode incomodar no balcão. Manter o beep, ou só feedback visual?

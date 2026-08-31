@@ -5,7 +5,15 @@
     "outDir": "dist",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "src/testes"
+  ]
 }

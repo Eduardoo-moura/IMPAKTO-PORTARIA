@@ -1,23 +1,21 @@
 /**
- * Roteamento e estado de sessão.
+ * Roteamento e portões de acesso.
  *
- * Estrutura da Fase 0: sem sessão real ainda — o login e as permissões vêm da
- * API na Fase 1. O que já está de pé é a forma: sem usuário, só a tela de
- * acesso; com usuário, o layout com o menu montado a partir das permissões.
+ * Três estados, nesta ordem: sem sessão → login; sessão com troca de senha
+ * pendente → troca obrigatória; sessão normal → o sistema.
  *
- * As telas do módulo Portaria entram na Fase 2, nas rotas já reservadas.
+ * As telas do módulo Portaria entram na Fase 6, nas rotas já reservadas.
  */
 
-import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppLayout } from './layouts/AppLayout.js';
 import { Dashboard } from './paginas/Dashboard.js';
 import { Login } from './paginas/Login.js';
+import { TrocarSenha } from './paginas/TrocarSenha.js';
+import { useSessao } from './servicos/sessao.js';
 
-type Sessao = { usuario: { nome: string; perfil: string }; permissoes: string[] };
-
-/** Placeholder das telas da Fase 2 e 3, para a navegação já ser percorrível. */
+/** Placeholder das fases seguintes, para a navegação já ser percorrível. */
 function EmConstrucao({ titulo, fase }: { titulo: string; fase: string }) {
   return (
     <div className="mx-auto max-w-7xl">
@@ -34,39 +32,36 @@ function EmConstrucao({ titulo, fase }: { titulo: string; fase: string }) {
 }
 
 export function App() {
-  const [sessao, setSessao] = useState<Sessao | null>(null);
+  const { usuario, carregando, entrar, sair, trocarTurno } = useSessao();
 
-  async function entrar({ login }: { login: string; senha: string }): Promise<void> {
-    // Fase 1: POST /api/auth/login, que devolve usuário e permissões.
-    setSessao({
-      usuario: { nome: login.toUpperCase(), perfil: 'PORTARIA' },
-      permissoes: [
-        'portaria.dashboard.ver',
-        'portaria.acesso.ver',
-        'portaria.mercadoria.ver',
-        'portaria.relatorio.emitir',
-      ],
-    });
+  // Enquanto o /refresh não responde, não dá para saber se há sessão — mostrar
+  // o login aqui faria a tela piscar a cada F5 de quem já está autenticado.
+  if (carregando) {
+    return (
+      <div className="grid min-h-full place-items-center bg-gray-50 dark:bg-black">
+        <p className="text-gray-500 dark:text-gray-400">Carregando…</p>
+      </div>
+    );
   }
 
-  if (!sessao) return <Login aoEntrar={entrar} />;
+  if (!usuario) return <Login aoEntrar={({ login, senha }) => entrar(login, senha)} />;
+
+  if (usuario.trocarSenha) return <TrocarSenha />;
 
   return (
     <AppLayout
-      usuario={sessao.usuario}
-      permissoes={sessao.permissoes}
-      // R32 — cancelar a troca mantém quem já estava: o sistema nunca fica
-      // aberto sem usuário na sessão. O aviso de dados não salvos entra junto
-      // com o formulário de entrada, na Fase 2.
-      aoTrocarTurno={() => setSessao(null)}
+      usuario={usuario}
+      permissoes={usuario.permissoes}
+      aoSair={sair}
+      aoTrocarTurno={trocarTurno}
     >
       <Routes>
         <Route path="/" element={<Dashboard indicadores={null} />} />
-        <Route path="/portaria/movimento" element={<EmConstrucao titulo="Movimento" fase="Fase 2" />} />
-        <Route path="/portaria/mercadorias" element={<EmConstrucao titulo="Mercadorias" fase="Fase 3" />} />
-        <Route path="/portaria/relatorios" element={<EmConstrucao titulo="Relatórios" fase="Fase 3" />} />
-        <Route path="/config/usuarios" element={<EmConstrucao titulo="Usuários" fase="Fase 1" />} />
-        <Route path="/config/auditoria" element={<EmConstrucao titulo="Auditoria" fase="Fase 1" />} />
+        <Route path="/portaria/movimento" element={<EmConstrucao titulo="Movimento" fase="Fase 6" />} />
+        <Route path="/portaria/mercadorias" element={<EmConstrucao titulo="Mercadorias" fase="Fase 6" />} />
+        <Route path="/portaria/relatorios" element={<EmConstrucao titulo="Relatórios" fase="Fase 6" />} />
+        <Route path="/config/usuarios" element={<EmConstrucao titulo="Usuários" fase="Fase 4 (restante)" />} />
+        <Route path="/config/auditoria" element={<EmConstrucao titulo="Auditoria" fase="Fase 4 (restante)" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppLayout>

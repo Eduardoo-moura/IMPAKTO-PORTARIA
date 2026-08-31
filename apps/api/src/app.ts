@@ -9,6 +9,7 @@
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
@@ -24,6 +25,7 @@ import { ehProducao, env, origensPermitidas } from './config/env.js';
 import { registrarRotaNaoEncontrada, registrarTratamentoDeErros } from './infra/errors.js';
 import { registrarFrontend } from './infra/estaticos.js';
 import { opcoesDeLog } from './infra/logger.js';
+import { rotasDeAuth } from './modules/auth/auth.routes.js';
 import { rotasDeSaude } from './modules/saude/saude.routes.js';
 
 export async function montarApp(): Promise<FastifyInstance> {
@@ -47,6 +49,13 @@ export async function montarApp(): Promise<FastifyInstance> {
   });
 
   await app.register(cookie);
+
+  await app.register(jwt, {
+    secret: env.JWT_SECRET,
+    // O token de acesso vem no cabeçalho; o de refresh vive no cookie httpOnly
+    // e é lido explicitamente pela rota /refresh, nunca aceito como acesso.
+    sign: { expiresIn: env.JWT_EXPIRACAO },
+  });
 
   // Barreira contra força bruta no login. Ajustar por rota quando necessário.
   await app.register(rateLimit, {
@@ -84,10 +93,12 @@ export async function montarApp(): Promise<FastifyInstance> {
   // ------------------------------------------------------------- módulos
   await app.register(rotasDeSaude);
 
-  // Fase 1 — segurança:
-  // await app.register(modAuth, { prefix: '/api/auth' });
-  // await app.register(modUsuarios, { prefix: '/api/usuarios' });
-  // await app.register(modAuditoria, { prefix: '/api/auditoria' });
+  // Fase 4 — autenticação:
+  await app.register(rotasDeAuth, { prefix: '/api/auth' });
+
+  // Ainda da fase de segurança:
+  // await app.register(rotasDeUsuarios, { prefix: '/api/usuarios' });
+  // await app.register(rotasDeAuditoria, { prefix: '/api/auditoria' });
 
   // Fase 2 e 3 — o setor:
   // await app.register(modPortaria, { prefix: '/api/portaria' });

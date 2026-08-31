@@ -16,6 +16,7 @@ import { useState, type FormEvent } from 'react';
 import { Botao } from '../componentes/Botao.js';
 import { Campo } from '../componentes/Campo.js';
 import { Mensagem } from '../componentes/Mensagem.js';
+import { ErroDaApi } from '../servicos/api.js';
 
 type Props = {
   aoEntrar: (credenciais: { login: string; senha: string }) => Promise<void>;
@@ -40,9 +41,10 @@ export function Login({
     setEnviando(true);
     try {
       await aoEntrar({ login: login.trim(), senha });
-    } catch {
-      // Mensagem única, igual à do desktop: não revela qual campo errou.
-      setErro('Usuário ou senha inválidos.');
+    } catch (e) {
+      // A mensagem única vem do servidor (R31) e não revela qual campo errou.
+      // Só o 429 do limite de tentativas fala outra coisa.
+      setErro(e instanceof ErroDaApi ? e.message : 'Não foi possível entrar. Tente novamente.');
       setSenha('');
     } finally {
       setEnviando(false);

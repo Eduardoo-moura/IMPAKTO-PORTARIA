@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apenasDigitos, chaveTipoVeiculo, maiusculas, normalizarNome, semAcento } from './texto.js';
+import { apenasDigitos, chaveTipoVeiculo, maiusculas, normalizarNome, semAcento, semControles } from './texto.js';
 
 describe('R19 — tudo em maiúsculas, normalizado no servidor', () => {
   it('sobe para maiúsculas e colapsa espaços', () => {
@@ -36,5 +36,21 @@ describe('tipo de veículo', () => {
 describe('celular', () => {
   it('reduz a dígitos', () => {
     expect(apenasDigitos('(11) 98888-7777')).toBe('11988887777');
+  });
+});
+
+describe('caracteres de controle', () => {
+  it('remove o byte NUL, que o PostgreSQL recusa em texto', () => {
+    expect(maiusculas('a\u0000b')).toBe('AB');
+    expect(semControles('joão\u0000')).toBe('joão');
+  });
+
+  it('remove outros controles sem comer o texto ao redor', () => {
+    expect(maiusculas('AB\u0007CD')).toBe('ABCD');
+    expect(maiusculas('linha\u000bum')).toBe('LINHAUM');
+  });
+
+  it('não mexe em acento nem em espaço normal', () => {
+    expect(maiusculas(' josé  da  silva ')).toBe('JOSÉ DA SILVA');
   });
 });

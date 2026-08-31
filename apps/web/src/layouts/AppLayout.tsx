@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   LogOut,
   Moon,
+  Repeat,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -27,6 +28,7 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
 
+import { TrocaDeTurno } from '../componentes/TrocaDeTurno.js';
 import { aplicarTema, temaSalvo, type Tema } from '../tema.js';
 
 export type ItemDeMenu = {
@@ -69,10 +71,12 @@ type Props = {
   children: ReactNode;
   usuario: { nome: string; perfil: string };
   permissoes: string[];
-  aoTrocarTurno: () => void;
+  aoSair: () => Promise<void>;
+  aoTrocarTurno: (login: string, senha: string) => Promise<void>;
 };
 
-export function AppLayout({ children, usuario, permissoes, aoTrocarTurno }: Props) {
+export function AppLayout({ children, usuario, permissoes, aoSair, aoTrocarTurno }: Props) {
+  const [trocandoTurno, setTrocandoTurno] = useState(false);
   const podeVer = (item: ItemDeMenu): boolean => !item.permissao || permissoes.includes(item.permissao);
 
   const [tema, setTema] = useState<Tema>(temaSalvo);
@@ -142,11 +146,19 @@ export function AppLayout({ children, usuario, permissoes, aoTrocarTurno }: Prop
           </div>
           <button
             type="button"
-            onClick={aoTrocarTurno}
+            onClick={() => setTrocandoTurno(true)}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-blue-50 transition-colors hover:bg-white/10 dark:text-gray-300"
+          >
+            <Repeat className="size-5 shrink-0" aria-hidden />
+            Trocar turno
+          </button>
+          <button
+            type="button"
+            onClick={() => void aoSair()}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-blue-50 transition-colors hover:bg-white/10 dark:text-gray-300"
           >
             <LogOut className="size-5 shrink-0" aria-hidden />
-            Trocar turno
+            Sair
           </button>
           <button
             type="button"
@@ -168,6 +180,16 @@ export function AppLayout({ children, usuario, permissoes, aoTrocarTurno }: Prop
         </header>
         <main className="min-w-0 flex-1 overflow-y-auto p-6">{children}</main>
       </div>
+
+      <TrocaDeTurno
+        aberto={trocandoTurno}
+        deQuem={usuario.nome}
+        aoFechar={() => setTrocandoTurno(false)}
+        aoConfirmar={async (login, senha) => {
+          await aoTrocarTurno(login, senha);
+          setTrocandoTurno(false);
+        }}
+      />
     </div>
   );
 }

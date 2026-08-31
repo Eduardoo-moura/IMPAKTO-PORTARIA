@@ -25,12 +25,25 @@ export class ErroDaApi extends Error {
   }
 }
 
-type Opcoes = { metodo?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; corpo?: unknown; sinal?: AbortSignal };
+type Opcoes = {
+  metodo?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  corpo?: unknown;
+  sinal?: AbortSignal;
+  /** Token de acesso, mantido em memória pelo provedor de sessão. */
+  token?: string | null;
+};
 
-export async function chamar<T>(caminho: string, { metodo = 'GET', corpo, sinal }: Opcoes = {}): Promise<T> {
+export async function chamar<T>(
+  caminho: string,
+  { metodo = 'GET', corpo, sinal, token }: Opcoes = {},
+): Promise<T> {
+  const cabecalhos: Record<string, string> = {};
+  if (corpo) cabecalhos['Content-Type'] = 'application/json';
+  if (token) cabecalhos.Authorization = `Bearer ${token}`;
+
   const resposta = await fetch(`/api${caminho}`, {
     method: metodo,
-    headers: corpo ? { 'Content-Type': 'application/json' } : undefined,
+    headers: cabecalhos,
     body: corpo ? JSON.stringify(corpo) : undefined,
     credentials: 'include',
     signal: sinal,
