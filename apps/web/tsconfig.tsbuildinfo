@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/componentes/botao.tsx","./src/componentes/campo.tsx","./src/componentes/mensagem.tsx","./src/layouts/applayout.tsx","./src/paginas/dashboard.tsx","./src/paginas/login.tsx","./src/servicos/api.ts","./vite.config.ts"],"version":"5.9.3"}
