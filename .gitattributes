@@ -1,0 +1,12 @@
+# Fim de linha normalizado como LF no repositório.
+#
+# Sem isto, o Git avisa a cada commit que vai converter LF para CRLF, e um
+# arquivo editado no Windows e outro no Linux aparecem como diferença inteira
+# mesmo sem nenhuma mudança real. Os arquivos abaixo são lidos por
+# ferramentas que esperam LF.
+* text=auto eol=lf
+
+*.png  binary
+*.jpg  binary
+*.woff2 binary
+*.pfx  binary
