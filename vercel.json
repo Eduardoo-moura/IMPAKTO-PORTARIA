@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "npm install",
-  "buildCommand": "npm run build --workspace @impakto/shared && npm run build --workspace @impakto/web && rm -rf dist && cp -r apps/web/dist dist",
+  "buildCommand": "npm run build --workspace @impakto/shared && npm run build --workspace @impakto/web",
   "outputDirectory": "dist",
   "rewrites": [
     {

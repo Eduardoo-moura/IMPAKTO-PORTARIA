@@ -6,7 +6,7 @@
  * entregue pelo mesmo processo, então existe **uma URL só** — que é o que a
  * portaria vai digitar no navegador do balcão.
  *
- * Só é registrado se `apps/web/dist` existir; sem o build, a API sobe normal
+ * Só é registrado se `dist/` existir; sem o build, a API sobe normal
  * e responde apenas as rotas de dados.
  */
 
@@ -19,13 +19,17 @@ import type { FastifyInstance } from 'fastify';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 
-/** `apps/api/dist/infra` → `apps/web/dist` (e o mesmo em `src/`, sob tsx). */
-export const PASTA_DO_FRONTEND = resolve(aqui, '..', '..', '..', 'web', 'dist');
+/**
+ * `dist/` na raiz do repositório — é onde o Vite escreve, e o mesmo diretório
+ * que o Vercel publica. Vale tanto rodando de `apps/api/dist/infra` (build)
+ * quanto de `apps/api/src/infra` (tsx).
+ */
+export const PASTA_DO_FRONTEND = resolve(aqui, '..', '..', '..', '..', 'dist');
 
 export async function registrarFrontend(app: FastifyInstance): Promise<boolean> {
   if (!existsSync(join(PASTA_DO_FRONTEND, 'index.html'))) {
     app.log.warn(
-      `Frontend não encontrado em ${PASTA_DO_FRONTEND}. Rode "npm run build --workspace @impakto/web" para servi-lo por esta URL.`,
+      `Frontend não encontrado em ${PASTA_DO_FRONTEND}. Rode "npm run build" para servi-lo por esta URL.`,
     );
     return false;
   }

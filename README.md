@@ -304,7 +304,9 @@ caso de registrar saída sobre uma saída já existente (R16).
 ## Deploy
 
 **Frontend — Vercel.** O `vercel.json` da raiz constrói o `@impakto/shared` e depois o
-`@impakto/web`, publicando `apps/web/dist`.
+`@impakto/web`, publicando `dist/` **na raiz** — que é onde o Vite escreve (`outDir: '../../dist'`)
+e o mesmo diretório que a API serve quando entrega o frontend na própria URL. Um lugar só: um
+passo de cópia que só rodasse no deploy seria justamente o que ninguém testa.
 
 Três detalhes do arquivo que têm motivo, e que uma tentativa anterior de deploy provou serem
 necessários:
