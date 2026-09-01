@@ -130,8 +130,11 @@ distinção não é detalhe:
 
 | Variável | De onde copiar | Porta | Para quê |
 |---|---|---|---|
-| `DATABASE_URL` | *Transaction pooler* + `&pgbouncer=true` | 6543 | Tempo de execução |
-| `DIRECT_URL` | *Direct connection* | 5432 | Migrations |
+| `DATABASE_URL` | *Transaction pooler* + `?pgbouncer=true` | 6543 | Tempo de execução |
+| `DIRECT_URL` | *Session pooler* (ou *Direct connection*) | 5432 | Migrations |
+
+O `pgbouncer=true` não é opcional: o modo transação não mantém prepared statements, e sem esse
+parâmetro o Prisma quebra com `prepared statement "s0" already exists` na segunda consulta igual.
 
 O pooler em modo transação não aceita os comandos que o Prisma Migrate emite; e o plano
 gratuito tem poucas conexões diretas, que o pool do Prisma esgota sozinho se usado em runtime.
@@ -144,6 +147,13 @@ Em PostgreSQL local as duas apontam para o mesmo lugar.
 > política**: `anon` e `authenticated` não enxergam linha alguma, e o Prisma continua
 > funcionando porque conecta como dono das tabelas. **Ao criar tabela nova, acrescente-a a
 > essa lista.** A autorização de verdade continua sendo do backend, onde é testada.
+
+**Este projeto não usa nenhuma chave de API do Supabase.** Nem a publicável, nem a secreta. A
+aplicação fala PostgreSQL puro pelo Prisma; o cliente JS, o PostgREST, o Auth e o Storage do
+Supabase não entram na arquitetura — quem autentica é o módulo `auth`, com os hashes PBKDF2
+herdados do desktop. A única credencial necessária é a senha do banco, nas duas URLs acima.
+Se alguma chave for gerada, ela não deve ser adicionada ao projeto: seria uma credencial sem
+uso e, no caso da secreta, uma que **ignora o RLS**.
 
 Depois, em qualquer um dos casos:
 
