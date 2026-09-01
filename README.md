@@ -303,6 +303,30 @@ caso de registrar saída sobre uma saída já existente (R16).
 
 ## Deploy
 
+**Frontend — Vercel.** O `vercel.json` da raiz constrói o `@impakto/shared` e depois o
+`@impakto/web`, publicando `apps/web/dist`. A API **não** vai para o Vercel: ela é um servidor
+Fastify de processo longo, e serverless quebraria duas coisas que já existem —
+
+- o limite de tentativas de login (R31) guarda estado **em memória**, e em funções serverless
+  cada requisição pode cair numa instância nova: a barreira contra força bruta deixaria de
+  valer, em silêncio;
+- WebSocket, que é o caminho previsto para a grade em tempo real, não funciona em função.
+
+**API — serviço com processo vivo** (Render, Railway, Fly, ou servidor próprio). Quando ela
+tiver URL, acrescente ao `vercel.json` a reescrita que mantém tudo na mesma origem:
+
+```json
+"rewrites": [{ "source": "/api/:caminho*", "destination": "https://<url-da-api>/api/:caminho*" }]
+```
+
+A reescrita não é detalhe de conveniência: ela mantém frontend e API na **mesma origem**, o que
+evita CORS e preserva o cookie de refresh como `SameSite=Strict`. Servindo de origens
+diferentes, o cookie precisaria de `SameSite=None` e perderia essa proteção.
+
+### Notas gerais
+
+
+
 Rede interna, sem exposição à internet enquanto não houver requisito (DV2).
 Kestrel/Node atrás de um reverse proxy, ou IIS. Requisitos que vêm do levantamento:
 

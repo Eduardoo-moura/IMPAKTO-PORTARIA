@@ -1,0 +1,6 @@
+# A API não vai para o Vercel: ela é um servidor Fastify de processo longo, e
+# o Vercel aqui serve só o frontend estático e o domínio.
+apps/api
+docs
+scripts
+**/*.test.ts
