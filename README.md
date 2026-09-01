@@ -227,9 +227,17 @@ npm test            # todos
 npm run test:watch
 ```
 
-> Os testes **truncam tabelas**. `apps/api/src/testes/ambiente.ts` recusa rodar se a URL não
-> terminar em `_test` ou se apontar para um host remoto — a trava existe porque, com o banco de
-> homologação na nuvem, um `npm test` distraído apagaria a homologação inteira.
+> Os testes **truncam tabelas**. `DATABASE_URL_TESTE` precisa apontar para um alvo descartável:
+> o schema `teste` do Supabase (`?schema=teste`) ou um banco local terminado em `_test`.
+> `apps/api/src/testes/ambiente.ts` recusa rodar em qualquer outro — a trava existe porque, com
+> a homologação no mesmo servidor, um `npm test` distraído apagaria a homologação inteira.
+
+**Sobre onde rodar os testes.** A suíte tem 67 testes de integração, e cada um limpa e semeia o
+banco. Contra PostgreSQL local ela leva **~4 segundos**; contra o Supabase em Oregon, **~13
+minutos**, porque cada ida e volta custa ~180 ms. Funciona nos dois, mas para o ciclo de
+desenvolvimento a diferença é o que separa rodar a suíte a cada mudança de rodá-la uma vez por
+dia. O `npm run hml:db start` sobe um PostgreSQL portátil só para isso, sem afetar a
+homologação, que continua na nuvem.
 
 Os testes de `packages/shared` são a rede que garante que o comportamento do C# foi preservado.
 Cada `describe` cita a regra (`R01`, `R12`, …) rastreada no levantamento. **Alterar uma dessas

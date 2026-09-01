@@ -20,23 +20,24 @@ export async function subirApp(): Promise<FastifyInstance> {
 
 /** Zera o que os testes criam. Perfis e permissões são resemeados. */
 /**
- * Zera o banco de teste. A ordem respeita as chaves estrangeiras: movimento
- * antes de cadastro, cadastro antes de segurança.
+ * Zera o schema de teste.
+ *
+ * Um único TRUNCATE em vez de treze `deleteMany`. Não é micro-otimização: com
+ * o banco na nuvem, cada ida e volta custa ~180 ms, e isto roda antes de CADA
+ * teste — treze comandos viravam ~2,4 s por teste, o que levava a suíte a mais
+ * de dez minutos.
+ *
+ * `RESTART IDENTITY` zera as sequências, então os ids não crescem sem parar
+ * entre execuções; `CASCADE` cuida das chaves estrangeiras sem exigir ordem.
  */
 export async function limparBanco(): Promise<void> {
-  await prisma.auditoria.deleteMany();
-  await prisma.acessoAcompanhante.deleteMany();
-  await prisma.acesso.deleteMany();
-  await prisma.mercadoria.deleteMany();
-  await prisma.veiculo.deleteMany();
-  await prisma.tipoVeiculoAlias.deleteMany();
-  await prisma.tipoVeiculo.deleteMany();
-  await prisma.pessoa.deleteMany();
-  await prisma.empresa.deleteMany();
-  await prisma.usuario.deleteMany();
-  await prisma.perfilPermissao.deleteMany();
-  await prisma.perfil.deleteMany();
-  await prisma.permissao.deleteMany();
+  await prisma.$executeRawUnsafe(`
+    TRUNCATE TABLE
+      auditoria, acesso_acompanhante, acesso, mercadoria,
+      veiculo, tipo_veiculo_alias, tipo_veiculo, pessoa, empresa,
+      usuario, perfil_permissao, perfil, permissao
+    RESTART IDENTITY CASCADE
+  `);
 }
 
 /**
@@ -75,15 +76,18 @@ export async function semearPerfis(): Promise<void> {
   const todas = await prisma.permissao.findMany();
   const doPorteiro = todas.filter((p) => p.modulo === 'portaria');
 
-  for (const [nome, permissoes] of [
-    [PERFIS.ADMINISTRADOR, todas],
-    [PERFIS.PORTARIA, doPorteiro],
-  ] as const) {
-    const perfil = await prisma.perfil.create({ data: { nome, deSistema: true } });
-    await prisma.perfilPermissao.createMany({
-      data: permissoes.map((p) => ({ perfilId: perfil.id, permissaoId: p.id })),
-    });
-  }
+  const [admin, portaria] = await Promise.all([
+    prisma.perfil.create({ data: { nome: PERFIS.ADMINISTRADOR, deSistema: true } }),
+    prisma.perfil.create({ data: { nome: PERFIS.PORTARIA, deSistema: true } }),
+  ]);
+
+  // Um único createMany para os dois perfis, em vez de um por perfil.
+  await prisma.perfilPermissao.createMany({
+    data: [
+      ...todas.map((p) => ({ perfilId: admin.id, permissaoId: p.id })),
+      ...doPorteiro.map((p) => ({ perfilId: portaria.id, permissaoId: p.id })),
+    ],
+  });
 }
 
 export async function criarUsuario(opcoes: {
