@@ -25,8 +25,10 @@ import { ehProducao, env, origensPermitidas } from './config/env.js';
 import { registrarRotaNaoEncontrada, registrarTratamentoDeErros } from './infra/errors.js';
 import { registrarFrontend } from './infra/estaticos.js';
 import { opcoesDeLog } from './infra/logger.js';
+import { rotasDeAuditoria } from './modules/auditoria/auditoria.routes.js';
 import { rotasDeAuth } from './modules/auth/auth.routes.js';
 import { rotasDeSaude } from './modules/saude/saude.routes.js';
+import { rotasDeUsuarios } from './modules/usuarios/usuarios.routes.js';
 
 export async function montarApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -96,9 +98,8 @@ export async function montarApp(): Promise<FastifyInstance> {
   // Fase 4 — autenticação:
   await app.register(rotasDeAuth, { prefix: '/api/auth' });
 
-  // Ainda da fase de segurança:
-  // await app.register(rotasDeUsuarios, { prefix: '/api/usuarios' });
-  // await app.register(rotasDeAuditoria, { prefix: '/api/auditoria' });
+  await app.register(rotasDeUsuarios, { prefix: '/api/usuarios' });
+  await app.register(rotasDeAuditoria, { prefix: '/api/auditoria' });
 
   // Fase 2 e 3 — o setor:
   // await app.register(modPortaria, { prefix: '/api/portaria' });

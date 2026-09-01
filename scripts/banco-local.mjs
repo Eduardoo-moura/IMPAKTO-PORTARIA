@@ -26,6 +26,37 @@ const PORTA = 5433;
 const pgCtl = (...args) =>
   spawnSync(join(BIN, 'pg_ctl.exe'), ['-D', DADOS, ...args], { encoding: 'utf8', windowsHide: true });
 
+/**
+ * Sobe o servidor DESANEXADO do console de quem chama.
+ *
+ * Sem isso o postgres morre junto com o terminal: ele fica no mesmo console e
+ * recebe o Ctrl+C que encerra qualquer comando ali (o log registra o
+ * desligamento com a excecao 0xC000013A, que e STATUS_CONTROL_C_EXIT). O
+ * `detached` do spawnSync nao resolve no Windows -- quem resolve e o
+ * Start-Process do PowerShell, que da um console proprio ao processo.
+ *
+ * A prontidao e confirmada pelo `pg_ctl status`, e nao pela saida do comando:
+ * como ele foi desanexado, nao ha saida para esperar.
+ */
+function iniciarEEsperar() {
+  const comando = [
+    "Start-Process -FilePath '" + join(BIN, 'pg_ctl.exe') + "'",
+    "-ArgumentList @('-D','" + DADOS + "','-l','" + LOG + "','start')",
+    '-WindowStyle Hidden',
+  ].join(' ');
+
+  spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', comando], {
+    stdio: 'ignore',
+    windowsHide: true,
+  });
+
+  for (let tentativa = 0; tentativa < 60; tentativa++) {
+    if (pgCtl('status').status === 0) return true;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
+  }
+  return false;
+}
+
 function exigirInstalacao() {
   if (existsSync(join(BIN, 'pg_ctl.exe')) && existsSync(DADOS)) return;
 
@@ -58,13 +89,12 @@ switch (comando) {
       console.log(`Banco já estava no ar em localhost:${PORTA}.`);
       break;
     }
-    // `-w` espera ficar pronto; sem isso a migration seguinte encontra o
-    // banco ainda subindo e falha por conexão recusada.
-    const r = pgCtl('-l', LOG, '-w', 'start');
-    if (r.status !== 0) {
-      console.error(r.stderr || r.stdout);
-      console.error(`\nÚltimas linhas de ${LOG}:`);
-      if (existsSync(LOG)) console.error(readFileSync(LOG, 'utf8').split('\n').slice(-10).join('\n'));
+    if (!iniciarEEsperar()) {
+      console.error(`O banco nao ficou pronto. Ultimas linhas de ${LOG}:`);
+      if (existsSync(LOG)) {
+        const fim = readFileSync(LOG, 'utf8').split('\n').slice(-12).join('\n');
+        console.error(fim);
+      }
       process.exit(1);
     }
     console.log(`Banco no ar em localhost:${PORTA}.`);

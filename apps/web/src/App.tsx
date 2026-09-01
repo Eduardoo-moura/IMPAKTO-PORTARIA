@@ -10,9 +10,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppLayout } from './layouts/AppLayout.js';
+import { Auditoria } from './paginas/Auditoria.js';
 import { Dashboard } from './paginas/Dashboard.js';
 import { Login } from './paginas/Login.js';
 import { TrocarSenha } from './paginas/TrocarSenha.js';
+import { Usuarios } from './paginas/Usuarios.js';
 import { useSessao } from './servicos/sessao.js';
 
 /** Placeholder das fases seguintes, para a navegação já ser percorrível. */
@@ -60,8 +62,8 @@ export function App() {
         <Route path="/portaria/movimento" element={<EmConstrucao titulo="Movimento" fase="Fase 6" />} />
         <Route path="/portaria/mercadorias" element={<EmConstrucao titulo="Mercadorias" fase="Fase 6" />} />
         <Route path="/portaria/relatorios" element={<EmConstrucao titulo="Relatórios" fase="Fase 6" />} />
-        <Route path="/config/usuarios" element={<EmConstrucao titulo="Usuários" fase="Fase 4 (restante)" />} />
-        <Route path="/config/auditoria" element={<EmConstrucao titulo="Auditoria" fase="Fase 4 (restante)" />} />
+        <Route path="/config/usuarios" element={<Usuarios />} />
+        <Route path="/config/auditoria" element={<Auditoria />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppLayout>

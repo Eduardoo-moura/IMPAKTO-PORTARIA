@@ -7,7 +7,7 @@
  * reconstrói a sessão a partir do cookie.
  */
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { chamar, ErroDaApi } from './api.js';
@@ -25,6 +25,8 @@ type RespostaDeLogin = { token: string; usuario: Usuario };
 
 type ContextoDeSessao = {
   usuario: Usuario | null;
+  /** Token de acesso, para as telas chamarem a API. Vive só em memória. */
+  token: string | null;
   carregando: boolean;
   entrar: (login: string, senha: string) => Promise<void>;
   sair: () => Promise<void>;
@@ -38,10 +40,10 @@ const Contexto = createContext<ContextoDeSessao | null>(null);
 export function ProvedorDeSessao({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const token = useRef<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   const guardar = useCallback((resposta: RespostaDeLogin) => {
-    token.current = resposta.token;
+    setToken(resposta.token);
     setUsuario(resposta.usuario);
   }, []);
 
@@ -62,14 +64,14 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 
   const sair = useCallback(async () => {
     try {
-      await chamar('/auth/logout', { metodo: 'POST', token: token.current });
+      await chamar('/auth/logout', { metodo: 'POST', token });
     } catch (erro) {
       // Se a sessão já tinha expirado, o logout local vale do mesmo jeito.
       if (!(erro instanceof ErroDaApi) || erro.status !== 401) throw erro;
     }
-    token.current = null;
+    setToken(null);
     setUsuario(null);
-  }, []);
+  }, [token]);
 
   /**
    * R32 — Troca de turno.
@@ -83,21 +85,21 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
         await chamar<RespostaDeLogin>('/auth/trocar-turno', {
           metodo: 'POST',
           corpo: { login, senha },
-          token: token.current,
+          token,
         }),
       );
     },
-    [guardar],
+    [guardar, token],
   );
 
   const trocarSenha = useCallback(async (senhaAtual: string, novaSenha: string) => {
     await chamar('/auth/trocar-senha', {
       metodo: 'POST',
       corpo: { senhaAtual, novaSenha },
-      token: token.current,
+      token,
     });
     setUsuario((atual) => (atual ? { ...atual, trocarSenha: false } : atual));
-  }, []);
+  }, [token]);
 
   /**
    * R29 — primeira camada. Esconder o que o usuário não pode usar é
@@ -109,8 +111,8 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
   );
 
   const valor = useMemo(
-    () => ({ usuario, carregando, entrar, sair, trocarTurno, trocarSenha, pode }),
-    [usuario, carregando, entrar, sair, trocarTurno, trocarSenha, pode],
+    () => ({ usuario, token, carregando, entrar, sair, trocarTurno, trocarSenha, pode }),
+    [usuario, token, carregando, entrar, sair, trocarTurno, trocarSenha, pode],
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

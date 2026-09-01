@@ -172,7 +172,10 @@ Formato: **regra → origem → implementação web**. Cada uma vira um teste au
 **R29 — Proteção de permissão em duas camadas:** o menu fica oculto **e** a ação revalida ("Acesso negado").
 *Web:* frontend esconde a rota **e** o backend valida em middleware. Esconder botão não é autorização.
 
-**R30 — Nunca ficar sem administrador ativo.** *Origem:* `OutrosAdministradoresAtivos()`. Há só 2 usuários nível 1 — a regra é ativa na prática.
+**R30 — Nunca ficar sem administrador ativo.** *(ampliada na Fase 4)*
+Além de desativar, a web também recusa **rebaixar** o último administrador: trocar o perfil dele
+deixa o sistema exatamente igual a desativá-lo — sem ninguém que cadastre usuários ou consulte a
+auditoria. E ninguém desativa o próprio usuário. Ambas respondem 409, com a explicação na tela. *Origem:* `OutrosAdministradoresAtivos()`. Há só 2 usuários nível 1 — a regra é ativa na prática.
 
 **R31 — Login inválido: mensagem única; só autentica `ATIVO = 1`; tentativa recusada vai para a auditoria antes de existir sessão** (`RegistrarComo`).
 
@@ -413,7 +416,7 @@ Numeração do briefing (seção 17) — **é a única usada no projeto**.
 | **1** — Análise do sistema existente | Este documento | — | ✅ concluída |
 | **2** — Arquitetura | Monorepo, stack, modelo de dados | — | ✅ concluída |
 | **3** — Banco de dados | Schema, migration com CHECK e índices parciais, seed | — | ✅ aplicada |
-| **4** — Autenticação | Login, sessão, permissões, troca de senha e de turno, auditoria | 1 semana | 🔄 em curso |
+| **4** — Autenticação | Login, sessão, permissões, troca de senha e de turno, usuários, auditoria | 1 semana | ✅ concluída |
 | **5** — Estrutura base do frontend | Layout, identidade visual, roteamento | — | ✅ concluída |
 | **6** — Módulo Portaria | Entrada, busca, histórico, grade, saída, mercadorias, relatórios | 3–4 semanas | ❌ |
 | **7** — Testes e comparação com o C# | Cobertura das 38 regras | contínua | 🔄 parcial |
@@ -495,9 +498,9 @@ valores frescos como gate — não estes.
 | `TrocarUsuario()` | `POST /api/auth/trocar-turno` + modal | 4 | ✅ Migrado |
 | `Seguranca.SenhaConfere` | `shared/senha.ts` (PBKDF2 compatível) | 4 | ✅ Migrado |
 | `Nivel.Total/Restrito` | perfis `ADMINISTRADOR`/`PORTARIA` | 4 | ✅ Migrado |
-| `Frm_Usuarios` | `/api/usuarios` + `/config/usuarios` | 4 | Pendente |
-| `Auditoria.cs` | serviço `auditoria` | 4 | ✅ Migrado (gravação) |
-| `Frm_Auditoria` | `GET /api/auditoria` + `/config/auditoria` | 4 | Pendente (consulta) |
+| `Frm_Usuarios` | `/api/usuarios` + `/config/usuarios` | 4 | ✅ Migrado |
+| `Auditoria.cs` | serviço `auditoria` | 4 | ✅ Migrado |
+| `Frm_Auditoria` | `GET /api/auditoria` + `/config/auditoria` | 4 | ✅ Migrado |
 | `Mascaras.Placa` | `shared/validators/placa.ts` | 2 | Pendente |
 | `Mascaras.Documento` | `shared/validators/documento.ts` | 2 | Pendente |
 | `Frm_Veiculo.btn_Salvar` | `POST /api/portaria/acessos` | 2 | Pendente |

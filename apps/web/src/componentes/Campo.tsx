@@ -13,14 +13,16 @@ import type { LucideIcon } from 'lucide-react';
 type Props = InputHTMLAttributes<HTMLInputElement> & {
   rotulo: string;
   icone: LucideIcon;
-  /** Mensagem de conferência. Avisa, nunca impede. */
+  /** Mensagem de conferência. Avisa, nunca impede — e pinta o campo. */
   aviso?: string;
+  /** Texto de apoio neutro. Não pinta nada: só explica o que se espera. */
+  dica?: string;
   /** Mensagem de validação que de fato bloqueou a gravação. */
   erro?: string;
   ref?: Ref<HTMLInputElement>;
 };
 
-export function Campo({ rotulo, icone: Icone, aviso, erro, id, className = '', ...resto }: Props) {
+export function Campo({ rotulo, icone: Icone, aviso, dica, erro, id, className = '', ...resto }: Props) {
   const idCampo = id ?? resto.name;
   const idAuxiliar = idCampo ? `${idCampo}-aux` : undefined;
 
@@ -36,16 +38,22 @@ export function Campo({ rotulo, icone: Icone, aviso, erro, id, className = '', .
           id={idCampo}
           data-conferencia={aviso ? 'invalido' : undefined}
           aria-invalid={erro ? true : undefined}
-          aria-describedby={aviso || erro ? idAuxiliar : undefined}
+          aria-describedby={aviso || erro || dica ? idAuxiliar : undefined}
           className={`campo-portaria ${erro ? 'border-red-500' : ''} ${className}`}
         />
       </div>
-      {(aviso || erro) && (
+      {(aviso || erro || dica) && (
         <p
           id={idAuxiliar}
-          className={`mt-1.5 text-sm ${erro ? 'text-red-600 dark:text-red-400' : 'text-[#7c5e00] dark:text-yellow-300'}`}
+          className={`mt-1.5 text-sm ${
+            erro
+              ? 'text-red-600 dark:text-red-400'
+              : aviso
+                ? 'text-[#7c5e00] dark:text-yellow-300'
+                : 'text-gray-500 dark:text-gray-400'
+          }`}
         >
-          {erro ?? aviso}
+          {erro ?? aviso ?? dica}
         </p>
       )}
     </div>
