@@ -304,7 +304,22 @@ caso de registrar saída sobre uma saída já existente (R16).
 ## Deploy
 
 **Frontend — Vercel.** O `vercel.json` da raiz constrói o `@impakto/shared` e depois o
-`@impakto/web`, publicando `apps/web/dist`. A API **não** vai para o Vercel: ela é um servidor
+`@impakto/web`, publicando `apps/web/dist`.
+
+Três detalhes do arquivo que têm motivo, e que uma tentativa anterior de deploy provou serem
+necessários:
+
+- **`"framework": null`** — com `"vite"`, o preset assume que a saída fica em `dist` na raiz do
+  projeto. Num monorepo, isso conflita com `outputDirectory: "apps/web/dist"` e o build morre
+  com `Cannot read properties of undefined (reading 'fsPath')`, sem dizer por quê. Sem preset,
+  valem o `buildCommand` e o `outputDirectory` declarados.
+- **A reescrita `/((?!api/).*)` → `/index.html`** dá o fallback do roteamento do cliente: sem
+  ela, dar F5 em `/portaria/movimento` devolve 404, porque o caminho não existe como arquivo.
+  O Vercel só aplica reescrita depois de não encontrar arquivo estático, então `/assets/*`
+  continua sendo servido. **Quando a API tiver URL, a reescrita dela entra ANTES desta** — a
+  ordem importa, e este curinga engoliria as chamadas.
+- **`vercel.json` não aceita comentário.** Chave `"//"` dentro de um objeto de `rewrites` viola
+  o schema; a explicação mora aqui, não lá. A API **não** vai para o Vercel: ela é um servidor
 Fastify de processo longo, e serverless quebraria duas coisas que já existem —
 
 - o limite de tentativas de login (R31) guarda estado **em memória**, e em funções serverless
