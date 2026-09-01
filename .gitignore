@@ -12,3 +12,7 @@ coverage/
 .vite/
 .turbo/
 /dist
+
+# Gerado por 'vercel link'. Contem projectId e orgId — nao sao segredos,
+# mas sao especificos de uma conta e nao pertencem ao repositorio.
+.vercel
