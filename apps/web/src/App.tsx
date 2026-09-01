@@ -10,6 +10,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppLayout } from './layouts/AppLayout.js';
+import { Movimento } from './modules/portaria/Movimento.js';
 import { Auditoria } from './paginas/Auditoria.js';
 import { Dashboard } from './paginas/Dashboard.js';
 import { Login } from './paginas/Login.js';
@@ -59,7 +60,7 @@ export function App() {
     >
       <Routes>
         <Route path="/" element={<Dashboard indicadores={null} />} />
-        <Route path="/portaria/movimento" element={<EmConstrucao titulo="Movimento" fase="Fase 6" />} />
+        <Route path="/portaria/movimento" element={<Movimento />} />
         <Route path="/portaria/mercadorias" element={<EmConstrucao titulo="Mercadorias" fase="Fase 6" />} />
         <Route path="/portaria/relatorios" element={<EmConstrucao titulo="Relatórios" fase="Fase 6" />} />
         <Route path="/config/usuarios" element={<Usuarios />} />

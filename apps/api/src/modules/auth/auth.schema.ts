@@ -39,6 +39,12 @@ export const erroSchema = z.object({
     codigo: z.string(),
     mensagem: z.string(),
     campos: z.array(z.object({ campo: z.string(), mensagem: z.string() })).optional(),
+    /**
+     * Dados que o cliente precisa para decidir o que fazer com um 409 — qual
+     * documento não fechou, de quando era a saída que será sobrescrita.
+     * Sem declarar aqui, o serializador do Fastify remove o campo em silêncio.
+     */
+    contexto: z.record(z.unknown()).optional(),
   }),
 });
 

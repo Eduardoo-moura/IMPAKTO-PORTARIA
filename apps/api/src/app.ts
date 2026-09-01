@@ -27,6 +27,7 @@ import { registrarFrontend } from './infra/estaticos.js';
 import { opcoesDeLog } from './infra/logger.js';
 import { rotasDeAuditoria } from './modules/auditoria/auditoria.routes.js';
 import { rotasDeAuth } from './modules/auth/auth.routes.js';
+import { rotasDaPortaria } from './modules/portaria/portaria.routes.js';
 import { rotasDeSaude } from './modules/saude/saude.routes.js';
 import { rotasDeUsuarios } from './modules/usuarios/usuarios.routes.js';
 
@@ -49,6 +50,27 @@ export async function montarApp(): Promise<FastifyInstance> {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   });
+
+  /**
+   * Corpo vazio em POST de ação é legítimo.
+   *
+   * Registrar saída não tem o que enviar, mas muitos clientes mandam
+   * `Content-Type: application/json` por padrão — e o parser do Fastify
+   * responde 400 FST_ERR_CTP_EMPTY_JSON_BODY nesse caso. Aqui um corpo vazio
+   * vira `null` e a rota segue normalmente.
+   */
+  app.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    (_req, corpo: string, feito) => {
+      if (!corpo || corpo.trim() === '') return feito(null, null);
+      try {
+        feito(null, JSON.parse(corpo));
+      } catch (erro) {
+        feito(erro as Error, undefined);
+      }
+    },
+  );
 
   await app.register(cookie);
 
@@ -101,8 +123,8 @@ export async function montarApp(): Promise<FastifyInstance> {
   await app.register(rotasDeUsuarios, { prefix: '/api/usuarios' });
   await app.register(rotasDeAuditoria, { prefix: '/api/auditoria' });
 
-  // Fase 2 e 3 — o setor:
-  // await app.register(modPortaria, { prefix: '/api/portaria' });
+  // Fase 6 — o setor:
+  await app.register(rotasDaPortaria, { prefix: '/api/portaria' });
 
   // Setores futuros entram exatamente da mesma forma:
   // await app.register(modCompras, { prefix: '/api/compras' });

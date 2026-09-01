@@ -19,8 +19,20 @@ export async function subirApp(): Promise<FastifyInstance> {
 }
 
 /** Zera o que os testes criam. Perfis e permissões são resemeados. */
+/**
+ * Zera o banco de teste. A ordem respeita as chaves estrangeiras: movimento
+ * antes de cadastro, cadastro antes de segurança.
+ */
 export async function limparBanco(): Promise<void> {
   await prisma.auditoria.deleteMany();
+  await prisma.acessoAcompanhante.deleteMany();
+  await prisma.acesso.deleteMany();
+  await prisma.mercadoria.deleteMany();
+  await prisma.veiculo.deleteMany();
+  await prisma.tipoVeiculoAlias.deleteMany();
+  await prisma.tipoVeiculo.deleteMany();
+  await prisma.pessoa.deleteMany();
+  await prisma.empresa.deleteMany();
   await prisma.usuario.deleteMany();
   await prisma.perfilPermissao.deleteMany();
   await prisma.perfil.deleteMany();
@@ -32,9 +44,23 @@ export async function limparBanco(): Promise<void> {
  * Espelha o mapeamento do seed real: nível 1 → ADMINISTRADOR, nível 2 → PORTARIA.
  */
 export async function semearPerfis(): Promise<void> {
+  // Mesmo conjunto do seed real: o teste tem de ver as mesmas permissões que
+  // a produção, senão um 403 legítimo passa despercebido — ou aparece onde
+  // não deveria.
   const chaves = [
     'portaria.acesso.ver',
     'portaria.acesso.criar',
+    'portaria.acesso.saida',
+    'portaria.acesso.sobrescrever_saida',
+    'portaria.pessoa.ver',
+    'portaria.pessoa.editar',
+    'portaria.veiculo.ver',
+    'portaria.veiculo.editar',
+    'portaria.mercadoria.ver',
+    'portaria.mercadoria.registrar',
+    'portaria.mercadoria.entregar',
+    'portaria.mercadoria.desfazer_entrega',
+    'portaria.relatorio.emitir',
     'portaria.dashboard.ver',
     'usuario.ver',
     'usuario.editar',

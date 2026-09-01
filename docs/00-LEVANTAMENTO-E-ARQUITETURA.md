@@ -418,7 +418,7 @@ Numeração do briefing (seção 17) — **é a única usada no projeto**.
 | **3** — Banco de dados | Schema, migration com CHECK e índices parciais, seed | — | ✅ aplicada |
 | **4** — Autenticação | Login, sessão, permissões, troca de senha e de turno, usuários, auditoria | 1 semana | ✅ concluída |
 | **5** — Estrutura base do frontend | Layout, identidade visual, roteamento | — | ✅ concluída |
-| **6** — Módulo Portaria | Entrada, busca, histórico, grade, saída, mercadorias, relatórios | 3–4 semanas | ❌ |
+| **6** — Módulo Portaria | Entrada, busca, histórico, grade, saída ✅ · mercadorias, relatórios, painel ❌ | 3–4 semanas | 🔄 em curso |
 | **7** — Testes e comparação com o C# | Cobertura das 38 regras | contínua | 🔄 parcial |
 | **8** — Migração dos dados | Script idempotente + relatório de pendências + conferências como gate | 1 semana | ❌ |
 | **9** — Homologação | Web e desktop em paralelo, **desktop ainda como fonte de escrita** | 1–2 semanas | 🔄 ambiente montado |
@@ -501,16 +501,16 @@ valores frescos como gate — não estes.
 | `Frm_Usuarios` | `/api/usuarios` + `/config/usuarios` | 4 | ✅ Migrado |
 | `Auditoria.cs` | serviço `auditoria` | 4 | ✅ Migrado |
 | `Frm_Auditoria` | `GET /api/auditoria` + `/config/auditoria` | 4 | ✅ Migrado |
-| `Mascaras.Placa` | `shared/validators/placa.ts` | 2 | Pendente |
-| `Mascaras.Documento` | `shared/validators/documento.ts` | 2 | Pendente |
-| `Frm_Veiculo.btn_Salvar` | `POST /api/portaria/acessos` | 2 | Pendente |
-| `button1` (busca placa) | `GET /busca/placa/:placa` | 2 | Pendente |
-| `btn_rg` (busca documento) | `GET /busca/documento/:doc` | 2 | Pendente |
-| `att_historico` | `GET /historico` | 2 | Pendente |
-| `btn_visitas` (grade) | `GET /acessos/movimento` + WS | 2 | Pendente |
-| `Btn_Saida` | `POST /acessos/:id/saida` | 2 | Pendente |
-| `OcultarVisitas` | `?somenteDentro=true` | 2 | Pendente |
-| Abas de ajudante (1..5) | `acesso_acompanhante[]` | 2 | Pendente |
+| `Mascaras.Placa` | `shared/placa.ts` | 6 | ✅ Migrado |
+| `Mascaras.Documento` | `shared/documento.ts` | 6 | ✅ Migrado |
+| `Frm_Veiculo.btn_Salvar` | `POST /api/portaria/acessos` | 6 | ✅ Migrado |
+| `button1` (busca placa) | `GET /busca/placa/:placa` | 6 | ✅ Migrado |
+| `btn_rg` (busca documento) | `GET /busca/documento/:doc` | 6 | ✅ Migrado |
+| `att_historico` | `GET /historico/:por/:valor` | 6 | ✅ Migrado |
+| `btn_visitas` (grade) | `GET /acessos/movimento` | 6 | ✅ Migrado (WS na fase 3 de ganhos) |
+| `Btn_Saida` | `POST /acessos/:id/saida` | 6 | ✅ Migrado |
+| `OcultarVisitas` | `?somenteDentro=true` | 6 | ✅ Migrado |
+| Abas de ajudante (1..5) | `acesso_acompanhante[]` | 6 | ✅ Migrado |
 | `Frm_Mercadoria` | `/api/portaria/mercadorias` | 3 | Pendente |
 | `Frm_RetiradaMercadoria` | `POST /mercadorias/:id/entrega` | 3 | Pendente |
 | `AtualizarMercadoriasPendentes` | painel + `?somentePendentes` | 3 | Pendente |
