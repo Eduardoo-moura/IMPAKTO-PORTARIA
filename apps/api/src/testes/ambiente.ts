@@ -18,20 +18,34 @@ const arquivoEnv = resolve(raiz, '.env');
 
 if (existsSync(arquivoEnv)) process.loadEnvFile(arquivoEnv);
 
-const url = process.env.DATABASE_URL;
+/**
+ * Os testes TRUNCAM tabelas. Nunca podem apontar para o banco de trabalho.
+ *
+ * A URL de teste vem de `DATABASE_URL_TESTE` quando definida — é o caso desde
+ * que o banco de homologação passou a ser o Supabase, onde `DATABASE_URL`
+ * aponta para a nuvem. Sem ela, deriva do banco local acrescentando `_test`.
+ */
+const url = process.env.DATABASE_URL_TESTE ?? process.env.DATABASE_URL;
 if (!url) {
-  throw new Error('DATABASE_URL não definida. Crie o .env a partir do .env.example.');
+  throw new Error('Defina DATABASE_URL_TESTE (ou DATABASE_URL) no .env.');
 }
 
-// Mesmo servidor, banco com sufixo _test.
-if (!/\/impakto_test(\?|$)/.test(url)) {
-  process.env.DATABASE_URL = url.replace(/\/impakto(\?|$)/, '/impakto_test$1');
-}
+process.env.DATABASE_URL = /_test(\?|$)/.test(url)
+  ? url
+  : url.replace(/\/impakto(\?|$)/, '/impakto_test$1');
+// As migrations dos testes usam a mesma conexão.
+process.env.DIRECT_URL = process.env.DATABASE_URL;
 
-if (!/\/impakto_test(\?|$)/.test(process.env.DATABASE_URL!)) {
+const alvo = process.env.DATABASE_URL;
+
+if (!/_test(\?|$)/.test(alvo)) {
   throw new Error(
-    `Recusando rodar testes fora do banco de teste. DATABASE_URL aponta para: ${process.env.DATABASE_URL}`,
+    `Recusando rodar testes fora de um banco de teste. A URL aponta para: ${alvo.replace(/:[^:@]*@/, ':***@')}`,
   );
+}
+
+if (/supabase|amazonaws|\.com\//.test(alvo)) {
+  throw new Error('Recusando rodar testes contra um banco remoto. Use o PostgreSQL local.');
 }
 
 process.env.NODE_ENV = 'test';

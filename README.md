@@ -160,7 +160,8 @@ com a lista do que falta, em vez de quebrar no primeiro request.
 | Variável | Obrigatória | Para que serve |
 |---|---|---|
 | `DATABASE_URL` | sim | Conexão de runtime (no Supabase, o pooler na 6543) |
-| `DIRECT_URL` | não | Conexão para migrations (no Supabase, a direta na 5432). Sem ela, cai na `DATABASE_URL` |
+| `DIRECT_URL` | não | Conexão para migrations. Sem ela, cai na `DATABASE_URL` |
+| `DATABASE_URL_TESTE` | não | Banco dos testes. **Obrigatória quando `DATABASE_URL` aponta para a nuvem** |
 | `JWT_SECRET` | sim | Assinatura do token — mínimo 32 caracteres, **um por ambiente** |
 | `JWT_EXPIRACAO` | não | Validade do token (padrão `15m`) |
 | `REFRESH_EXPIRACAO_HORAS` | não | Validade do refresh (padrão `12`) |
@@ -215,6 +216,10 @@ normal e responde só as rotas de dados, avisando no log.
 npm test            # todos
 npm run test:watch
 ```
+
+> Os testes **truncam tabelas**. `apps/api/src/testes/ambiente.ts` recusa rodar se a URL não
+> terminar em `_test` ou se apontar para um host remoto — a trava existe porque, com o banco de
+> homologação na nuvem, um `npm test` distraído apagaria a homologação inteira.
 
 Os testes de `packages/shared` são a rede que garante que o comportamento do C# foi preservado.
 Cada `describe` cita a regra (`R01`, `R12`, …) rastreada no levantamento. **Alterar uma dessas
