@@ -4,7 +4,7 @@
   "private": true,
   "description": "Sistema web da Impakto, modular por setor. Fase 1: Portaria.",
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   },
   "workspaces": [
     "packages/*",

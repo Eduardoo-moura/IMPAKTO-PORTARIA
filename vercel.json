@@ -8,11 +8,30 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "no-referrer" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "//": "SPA: o roteamento e do cliente. Sem isto, dar F5 em /portaria/movimento devolve 404, porque o caminho nao existe como arquivo. O Vercel so aplica a reescrita depois de nao encontrar arquivo estatico, entao /assets/* continua sendo servido normalmente. QUANDO A API TIVER URL, a reescrita de /api/:caminho* entra ANTES desta -- a ordem importa, e este curinga engoliria as chamadas.",
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ]
 }
