@@ -5,7 +5,11 @@
  * `app.ts`, sem tocar em nada daqui.
  */
 
-import { DIAS_PENDENCIA_NA_GRADE, MAX_ACOMPANHANTES } from '@impakto/shared';
+import {
+  DIAS_NA_LISTA_MERCADORIA,
+  DIAS_PENDENCIA_NA_GRADE,
+  MAX_ACOMPANHANTES,
+} from '@impakto/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 
@@ -21,6 +25,12 @@ import {
   registrarEntrada,
   registrarSaida,
 } from './acessos/acessos.service.js';
+import {
+  confirmarEntrega,
+  desfazerEntrega,
+  listarMercadorias,
+  registrarChegada,
+} from './mercadorias/mercadorias.service.js';
 
 const acompanhanteSchema = z.object({
   nome: z.string().max(120).nullish(),
@@ -144,6 +154,99 @@ export const rotasDaPortaria: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req) => buscarUltimaVisita(req.params.por, req.params.valor),
+  );
+
+  // ----------------------------------------------------------- mercadorias
+  const mercadoriaSchema = z.object({
+    id: z.string(),
+    chegadaEm: z.string(),
+    destinatario: z.string(),
+    empresa: z.string().nullable(),
+    entregador: z.string().nullable(),
+    usuarioRegistro: z.string().nullable(),
+    entregueEm: z.string().nullable(),
+    retiradoPor: z.string().nullable(),
+    usuarioEntrega: z.string().nullable(),
+  });
+
+  app.get(
+    '/mercadorias',
+    {
+      preHandler: exigir('portaria.mercadoria.ver'),
+      schema: {
+        tags: ['portaria'],
+        summary: 'Mercadorias na portaria',
+        description: `Traz os últimos ${DIAS_NA_LISTA_MERCADORIA} dias somados a tudo que ainda não foi retirado. As pendentes ignoram a janela: encomenda parada há um mês continua parada.`,
+        querystring: z.object({
+          dias: z.coerce.number().int().min(1).max(365).default(DIAS_NA_LISTA_MERCADORIA),
+          somentePendentes: booleanoDeQuery(false),
+        }),
+        response: {
+          200: z.object({
+            mercadorias: z.array(mercadoriaSchema),
+            pendentes: z.number(),
+            dias: z.number(),
+          }),
+          401: erroSchema,
+          403: erroSchema,
+        },
+      },
+    },
+    async (req) => listarMercadorias(req.query),
+  );
+
+  app.post(
+    '/mercadorias',
+    {
+      preHandler: exigir('portaria.mercadoria.registrar'),
+      schema: {
+        tags: ['portaria'],
+        summary: 'Registra a chegada de uma mercadoria',
+        description: 'Só o destinatário é obrigatório.',
+        body: z.object({
+          destinatario: z.string().min(1, 'Informe para quem é.').max(120),
+          empresa: z.string().max(120).nullish(),
+          entregador: z.string().max(120).nullish(),
+        }),
+        response: { 201: mercadoriaSchema, 401: erroSchema, 403: erroSchema, 422: erroSchema },
+      },
+    },
+    async (req, reply) => {
+      const criada = await registrarChegada(req.body, sessaoDe(req), origemDaRequisicao(req), req.log);
+      return reply.status(201).send(criada);
+    },
+  );
+
+  app.post(
+    '/mercadorias/:id/entrega',
+    {
+      preHandler: exigir('portaria.mercadoria.entregar'),
+      schema: {
+        tags: ['portaria'],
+        summary: 'Confirma a retirada',
+        description: 'Exige o nome de quem está retirando — sem ele a baixa não responde à pergunta que a portaria vai fazer depois.',
+        params: z.object({ id: z.string() }),
+        body: z.object({ retiradoPor: z.string().min(1, 'Informe quem está retirando.').max(120) }),
+        response: { 200: mercadoriaSchema, 401: erroSchema, 403: erroSchema, 404: erroSchema, 409: erroSchema, 422: erroSchema },
+      },
+    },
+    async (req) =>
+      confirmarEntrega(req.params.id, req.body.retiradoPor, sessaoDe(req), origemDaRequisicao(req), req.log),
+  );
+
+  app.delete(
+    '/mercadorias/:id/entrega',
+    {
+      preHandler: exigir('portaria.mercadoria.desfazer_entrega'),
+      schema: {
+        tags: ['portaria'],
+        summary: 'Desfaz a retirada',
+        description: 'Reversível, mas rastreada: a trilha guarda quem havia retirado, quando e quem liberou.',
+        params: z.object({ id: z.string() }),
+        response: { 200: mercadoriaSchema, 401: erroSchema, 403: erroSchema, 404: erroSchema, 422: erroSchema },
+      },
+    },
+    async (req) => desfazerEntrega(req.params.id, sessaoDe(req), origemDaRequisicao(req), req.log),
   );
 
   app.get(

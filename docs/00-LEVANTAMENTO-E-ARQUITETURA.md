@@ -418,7 +418,7 @@ Numeração do briefing (seção 17) — **é a única usada no projeto**.
 | **3** — Banco de dados | Schema, migration com CHECK e índices parciais, seed | — | ✅ aplicada |
 | **4** — Autenticação | Login, sessão, permissões, troca de senha e de turno, usuários, auditoria | 1 semana | ✅ concluída |
 | **5** — Estrutura base do frontend | Layout, identidade visual, roteamento | — | ✅ concluída |
-| **6** — Módulo Portaria | Entrada, busca, histórico, grade, saída ✅ · mercadorias, relatórios, painel ❌ | 3–4 semanas | 🔄 em curso |
+| **6** — Módulo Portaria | Entrada, busca, histórico, grade, saída, mercadorias ✅ · relatórios (DV4), painel ❌ | 3–4 semanas | 🔄 em curso |
 | **7** — Testes e comparação com o C# | Cobertura das 38 regras | contínua | 🔄 parcial |
 | **8** — Migração dos dados | Script idempotente + relatório de pendências + conferências como gate | 1 semana | ❌ |
 | **9** — Homologação | Web e desktop em paralelo, **desktop ainda como fonte de escrita** | 1–2 semanas | 🔄 ambiente montado |
@@ -511,9 +511,9 @@ valores frescos como gate — não estes.
 | `Btn_Saida` | `POST /acessos/:id/saida` | 6 | ✅ Migrado |
 | `OcultarVisitas` | `?somenteDentro=true` | 6 | ✅ Migrado |
 | Abas de ajudante (1..5) | `acesso_acompanhante[]` | 6 | ✅ Migrado |
-| `Frm_Mercadoria` | `/api/portaria/mercadorias` | 3 | Pendente |
-| `Frm_RetiradaMercadoria` | `POST /mercadorias/:id/entrega` | 3 | Pendente |
-| `AtualizarMercadoriasPendentes` | painel + `?somentePendentes` | 3 | Pendente |
+| `Frm_Mercadoria` | `/api/portaria/mercadorias` | 6 | ✅ Migrado |
+| `Frm_RetiradaMercadoria` | `POST /mercadorias/:id/entrega` | 6 | ✅ Migrado |
+| `AtualizarMercadoriasPendentes` | painel + `?somentePendentes` | 6 | ✅ Migrado |
 | `Frm_relatorio_personalizado` | `POST /relatorios/acessos` | 3 | Pendente |
 | `Frm_relatorio_data` | mesmo endpoint, preset de 10 colunas | 3 | Pendente |
 | `Frm_relatorio_mercadoria` | `POST /relatorios/mercadorias` | 3 | Pendente |

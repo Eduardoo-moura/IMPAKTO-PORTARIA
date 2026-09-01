@@ -21,6 +21,8 @@ import {
   FormularioDeEntrada,
   type DadosDoFormulario,
 } from './FormularioDeEntrada.js';
+import type { Mercadoria } from './Mercadorias.js';
+import { PainelDeMercadorias } from './PainelDeMercadorias.js';
 
 export type Acesso = {
   id: string;
@@ -53,6 +55,7 @@ export function Movimento() {
   // R18 — "OCULTAR SAÍDAS" do desktop volta MARCADO a cada atualização.
   const [somenteDentro, setSomenteDentro] = useState(true);
   const [historico, setHistorico] = useState<{ titulo: string; itens: Acesso[] } | null>(null);
+  const [mercadorias, setMercadorias] = useState<Mercadoria[]>([]);
 
   const [carregando, setCarregando] = useState(true);
   const [buscando, setBuscando] = useState(false);
@@ -73,6 +76,19 @@ export function Movimento() {
       setErroDaGrade(e instanceof ErroDaApi ? e.message : 'Não foi possível carregar o movimento.');
     } finally {
       setCarregando(false);
+    }
+
+    // O painel acompanha a grade, como no desktop: o que foi registrado ou
+    // entregue na outra tela muda a lista daqui. Falha dele não derruba a
+    // grade, que é o que o porteiro precisa para trabalhar.
+    try {
+      const r = await chamar<{ mercadorias: Mercadoria[] }>(
+        '/portaria/mercadorias?somentePendentes=true',
+        { token },
+      );
+      setMercadorias(r.mercadorias);
+    } catch {
+      setMercadorias([]);
     }
   }, [token]);
 
@@ -229,6 +245,12 @@ export function Movimento() {
           />
         ) : (
           <Mensagem tipo="erro" texto="Seu perfil não permite registrar entradas." />
+        )}
+
+        {pode('portaria.mercadoria.ver') && (
+          <div className="mt-6">
+            <PainelDeMercadorias pendentes={mercadorias} />
+          </div>
         )}
 
         {historico && (
