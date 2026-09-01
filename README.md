@@ -125,7 +125,25 @@ O script explica como recriar a instalação do zero se a pasta não existir.
 
 **b) Docker**, se houver na máquina: `npm run db:up` (usa a 5432 — ajuste a `DATABASE_URL`).
 
-**c) Qualquer PostgreSQL 16 acessível**: aponte a `DATABASE_URL` e siga.
+**c) Supabase** (ou qualquer PostgreSQL acessível). No Supabase são **duas** URLs, e a
+distinção não é detalhe:
+
+| Variável | De onde copiar | Porta | Para quê |
+|---|---|---|---|
+| `DATABASE_URL` | *Transaction pooler* + `&pgbouncer=true` | 6543 | Tempo de execução |
+| `DIRECT_URL` | *Direct connection* | 5432 | Migrations |
+
+O pooler em modo transação não aceita os comandos que o Prisma Migrate emite; e o plano
+gratuito tem poucas conexões diretas, que o pool do Prisma esgota sozinho se usado em runtime.
+Em PostgreSQL local as duas apontam para o mesmo lugar.
+
+> **Segurança no Supabase — não pule.** Ele publica toda tabela do schema `public` pela API
+> REST usando a chave `anon`, que é pública por design. Sem RLS, essa chave leria a tabela
+> `pessoa` inteira — CPF, RG, nome e celular de ~12.800 pessoas — sem autenticação nenhuma.
+> A migration `20260901120000_rls_nega_tudo` fecha isso habilitando RLS **sem nenhuma
+> política**: `anon` e `authenticated` não enxergam linha alguma, e o Prisma continua
+> funcionando porque conecta como dono das tabelas. **Ao criar tabela nova, acrescente-a a
+> essa lista.** A autorização de verdade continua sendo do backend, onde é testada.
 
 Depois, em qualquer um dos casos:
 
@@ -141,7 +159,8 @@ com a lista do que falta, em vez de quebrar no primeiro request.
 
 | Variável | Obrigatória | Para que serve |
 |---|---|---|
-| `DATABASE_URL` | sim | Conexão PostgreSQL |
+| `DATABASE_URL` | sim | Conexão de runtime (no Supabase, o pooler na 6543) |
+| `DIRECT_URL` | não | Conexão para migrations (no Supabase, a direta na 5432). Sem ela, cai na `DATABASE_URL` |
 | `JWT_SECRET` | sim | Assinatura do token — mínimo 32 caracteres, **um por ambiente** |
 | `JWT_EXPIRACAO` | não | Validade do token (padrão `15m`) |
 | `REFRESH_EXPIRACAO_HORAS` | não | Validade do refresh (padrão `12`) |

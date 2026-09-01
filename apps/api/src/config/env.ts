@@ -13,8 +13,14 @@ const esquema = z.object({
   PORT: z.coerce.number().int().positive().default(3333),
   HOST: z.string().default('0.0.0.0'),
 
-  /** postgresql://usuario:senha@host:5432/impakto */
+  /** Runtime. No Supabase, o pooler (6543); em local, o próprio banco. */
   DATABASE_URL: z.string().url(),
+  /**
+   * Migrations. No Supabase, a conexão direta (5432) — o pooler em modo
+   * transação não aceita os comandos do Prisma Migrate. Em local, igual à
+   * DATABASE_URL; por isso o padrão cai nela quando não é informada.
+   */
+  DIRECT_URL: z.string().url().optional(),
 
   /** Segredo de assinatura do JWT. Em produção, no mínimo 32 caracteres. */
   JWT_SECRET: z.string().min(32),
@@ -42,7 +48,10 @@ if (!resultado.success) {
   process.exit(1);
 }
 
-export const env = resultado.data;
+export const env = {
+  ...resultado.data,
+  DIRECT_URL: resultado.data.DIRECT_URL ?? resultado.data.DATABASE_URL,
+};
 
 export const ehProducao = env.NODE_ENV === 'production';
 

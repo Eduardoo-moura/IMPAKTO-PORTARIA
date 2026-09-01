@@ -18,7 +18,13 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Runtime: no Supabase, aponta para o POOLER (porta 6543). O plano gratuito
+  // aceita poucas conexoes diretas, e o pool do Prisma as esgota sozinho.
+  url       = env("DATABASE_URL")
+  // Migrations e introspeccao: conexao DIRETA (porta 5432). O pooler em modo
+  // transacao nao suporta os comandos que o Prisma Migrate emite.
+  // Em Postgres local as duas apontam para o mesmo lugar.
+  directUrl = env("DIRECT_URL")
 }
 
 // ---------------------------------------------------------------- SEGURANÇA
